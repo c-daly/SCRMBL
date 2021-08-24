@@ -1,0 +1,90 @@
+from .pysc2_base_agent import Pysc2BaseAgent
+
+ACTION_NO_OP = 0
+
+class Pysc2DZBAgent(Pysc2BaseAgent):
+    """
+    An example of a pysc2 agent for the
+    defeat zerglings and banelings minigame
+    map.
+    """
+    def __init__(self):
+        self.x = 5
+        self.movement_rate_per_step = 4
+
+    def get_action(self, obs):
+        return ACTION_NO_OP
+    def step(self, obs):
+        return ACTION_NO_OP
+
+    def take_action(self, action):
+        mapped_action = action % 6
+        marine_index = (action % 9)
+        try:
+            marine = self.marines[max(marine_index, 0)]
+        except:
+            marine = None
+        action_mapped = actions.RAW_FUNCTIONS.no_op()
+        if mapped_action == 0:
+            action_mapped = self.move_up(marine)
+        elif mapped_action == 1:
+            action_mapped = self.move_right(marine)
+        elif mapped_action == 2:
+            action_mapped = self.move_down(marine)
+        elif mapped_action == 3:
+            action_mapped = self.move_left(marine)
+        elif mapped_action == 4:
+            action_mapped = self.attack(marine)
+        try:
+            raw_obs = self.env.step([action_mapped])
+            return raw_obs[0]
+        except:
+            action_mapped = actions.RAW_FUNCTIONS.no_op()
+            raw_obs = self.env.step([action_mapped])
+            return raw_obs[0]
+
+    def move_up(self, marine):
+        try:
+            new_pos = [marine.x, marine.y - self.movement_rate_per_step]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_down(self, marine):
+        try:
+            new_pos = [marine.x, marine.y + self.movement_rate_per_step2]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_left(self, marine):
+        try:
+            new_pos = [marine.x - self.movement_rate_per_step2, marine.y]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_right(self, marine):
+        try:
+            new_pos = [marine.x + self.movement_rate_per_step2, marine.y]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def attack(self, marine):
+        try:
+            enemy = random.choice(self.enemy_units)
+            return actions.RAW_FUNCTIONS.Attack_pt("now", marine.tag, (enemy.x, enemy.y))
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def attack_enemies(self):
+        if len(self.marines) > 0:
+            tags = [marine.tag for marine in self.marines]
+            if len(self.enemy_units) > 0:
+                enemy = random.choice(self.enemy_units)
+                return actions.RAW_FUNCTIONS.Attack_pt("now", tags, (enemy.x, enemy.y))
+            attack_xy = (random.randint(1, 83), random.randint(1, 83))
+            return actions.RAW_FUNCTIONS.Attack_pt("now", tags, attack_xy)
+        else:
+            return actions.RAW_FUNCTIONS.no_op()

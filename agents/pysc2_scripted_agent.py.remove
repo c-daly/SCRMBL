@@ -1,0 +1,88 @@
+import random
+from pysc2.lib import actions
+from .pysc2_base_agent import Pysc2BaseAgent
+from .component_agents.sc2_unit_manager import SC2UnitManager
+from actions.SCII import pysc2_actions
+
+
+class Pysc2ScriptedAgent(Pysc2BaseAgent):
+    def __init__(self):
+        super(Pysc2BaseAgent, self).__init__()
+        self.unit_manager = SC2UnitManager()
+        self.movement_rate_per_step = 2
+        self.obs = None
+
+    def step(self, obs):
+        try:
+           return self.unit_manager.step(obs)
+        except Exception as ex:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_up(self, marine):
+        try:
+            new_pos = [marine.x, marine.y - self.movement_rate_per_step]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_down(self, marine):
+        try:
+            new_pos = [marine.x, marine.y + self.movement_rate_per_step]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_left(self, marine):
+        try:
+            new_pos = [marine.x - self.movement_rate_per_step, marine.y]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except Exception as ex:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def move_right(self, marine):
+        try:
+            new_pos = [marine.x + self.movement_rate_per_step, marine.y]
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+        except:
+            return actions.RAW_FUNCTIONS.no_op()
+
+    def attack(self, marine):
+        try:
+            enemy = random.choice(self.enemy_units)
+            return actions.RAW_FUNCTIONS.Attack_pt("now", marine.tag, (enemy.x, enemy.y))
+        except:
+            new_pos = (random.randint(1, 48), random.randint(1, 48))
+            return actions.RAW_FUNCTIONS.Move_pt("now", marine.tag, new_pos)
+
+    def attack_enemies(self):
+        if len(self.marines) > 0:
+            tags = [marine.tag for marine in self.marines]
+            if len(self.enemy_units) > 0:
+                enemy = random.choice(self.enemy_units)
+                return actions.RAW_FUNCTIONS.Attack_pt("now", tags, (enemy.x, enemy.y))
+            attack_xy = (random.randint(1, 83), random.randint(1, 83))
+            return actions.RAW_FUNCTIONS.Attack_pt("now", tags, attack_xy)
+        else:
+            return actions.RAW_FUNCTIONS.no_op()
+
+
+    def get_enemy_units(self, obs):
+        return [unit for unit in obs.observation.raw_units if unit.alliance == 4]
+
+
+    def get_units_by_type(self, obs, unit_type, player_relative=0):
+        """
+        NONE = 0
+        SELF = 1
+        ALLY = 2
+        NEUTRAL = 3
+        ENEMY = 4
+        """
+        return [unit for unit in obs.observation.raw_units
+                if unit.unit_type == unit_type
+                and unit.alliance == player_relative]
+
+
+    def get_distances(self, units, xy):
+        units_xy = [(unit.x, unit.y) for unit in units]
+        return np.linalg.norm(np.array(units_xy) - np.array(xy), axis=1)
