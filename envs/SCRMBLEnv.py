@@ -27,7 +27,7 @@ class SCRMBLEnv(base_env.BaseEnv):
         # 'map_name': "DefeatZerglingsAndBanelings",
         'map_name': "Simple64",
         'players': [sc2_env.Agent(sc2_env.Race.terran),
-                    sc2_env.Bot(sc2_env.Race.zerg, sc2_env.Difficulty.very_easy)],
+                    sc2_env.Bot(sc2_env.Race.zerg, sc2_env.Difficulty.medium)],
         'agent_interface_format': features.AgentInterfaceFormat(
             action_space=actions.ActionSpace.RAW,
             use_raw_units=True,

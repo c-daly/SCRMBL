@@ -3,7 +3,7 @@ from pysc2.env import sc2_env
 from pysc2.lib import actions, features, units
 import numpy as np
 import random
-from .base_gym_env import  BaseGymEnv
+from .base_gym_env import BaseGymEnv
 
 
 class SC2GymEnv(BaseGymEnv):
@@ -13,7 +13,7 @@ class SC2GymEnv(BaseGymEnv):
         # 'map_name': "DefeatZerglingsAndBanelings",
         'map_name': "Simple64",
         'players': [sc2_env.Agent(sc2_env.Race.terran),
-                    sc2_env.Bot(sc2_env.Race.zerg, sc2_env.Difficulty.very_easy)],
+                    sc2_env.Bot(sc2_env.Race.zerg, sc2_env.Difficulty.medium)],
         'agent_interface_format': features.AgentInterfaceFormat(
             action_space=actions.ActionSpace.RAW,
             use_raw_units=True,
@@ -28,12 +28,13 @@ class SC2GymEnv(BaseGymEnv):
         self.env = None
         self.marines = []
         self.mineral_patches = []
-        self.action_space = spaces.Discrete(9)
-        self.observation_space = spaces.Box(
-            low=0,
-            high=64,
-            shape=(500, 4)
-        )
+        self.action_space = spaces.Discrete(6)
+        #self.observation_space = spaces.Box(
+        #    low=0,
+        #    high=64,
+        #    shape=(500, 4)
+        #)
+        self.observation_space = spaces.Box(low=0, high=256, shape=(4,))
 
     def step(self, action):
         raw_obs = self.take_action(action)  # take safe action
@@ -43,9 +44,9 @@ class SC2GymEnv(BaseGymEnv):
 
     def take_action(self, action):
         # map value to action
-        mapped_action = action % 9
+        mapped_action = action % 6
         if mapped_action == 0:
-            action_mapped = self.harvest_minerals()
+            action_mapped = self.all_scvs_harvest_minerals()
         elif mapped_action == 1:
             action_mapped = self.build_supply_depot()
         elif mapped_action == 2:
@@ -56,10 +57,10 @@ class SC2GymEnv(BaseGymEnv):
             action_mapped = self.train_marine()
         elif mapped_action == 5:
             action_mapped = self.attack_enemies()
-        elif mapped_action == 6:
-            action_mapped = self.scvs_attack()
-        elif mapped_action == 7:
-            action_mapped = self.all_scvs_harvest_minerals()
+        #elif mapped_action == 6:
+        #    action_mapped = self.scvs_attack()
+        #elif mapped_action == 7:
+        #    action_mapped = self.all_scvs_harvest_minerals()
         else:
             action_mapped = actions.RAW_FUNCTIONS.no_op()
         try:
@@ -208,7 +209,7 @@ class SC2GymEnv(BaseGymEnv):
 
     def get_derived_obs(self, raw_obs):
         #print(raw_obs.observation['score_cumulative'][0])
-        obs = np.zeros((500, 4), dtype=np.uint8)
+        #obs = np.zeros((500, 4), dtype=np.uint8)
         # 1 indicates my own unit, 4 indicates enemy's
         #zerglings = self.get_units_by_type(raw_obs, units.Zerg.Zergling, 4)
         #banelings = self.get_units_by_type(raw_obs, units.Zerg.Baneling, 4)
@@ -238,13 +239,17 @@ class SC2GymEnv(BaseGymEnv):
                units.Neutral.RichMineralField750
         ]]
 
-        for i, m in enumerate(raw_obs.observation.raw_units):
-            try:
-                obs[i] = np.array([m.x, m.y, m[2], m.alliance])
-            except:
-                continue
-
-        return obs
+        #for i, m in enumerate(raw_obs.observation.raw_units):
+        #    try:
+        #        #obs[i] = np.array([m.x, m.y, m[2], m.alliance])
+        #    except:
+        #        continue
+        num_scvs = len(self.scvs)
+        num_marines = len(self.marines)
+        num_barracks = len(self.barracks)
+        score = raw_obs.observation['score_cumulative'][0]
+        return [score,num_scvs,num_marines,num_barracks]
+        #return obs
 
     def get_enemy_units(self, obs):
         return [unit for unit in obs.observation.raw_units if unit.alliance == 4]
