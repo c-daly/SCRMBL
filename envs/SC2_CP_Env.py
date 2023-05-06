@@ -2,24 +2,24 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 import gym
-from gym import spaces
+from gym.spaces import spaces
 
 import websockets.exceptions
 from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
-from websockets import connect
+import websocket
+from contextlib import closing
 
 class SC2_CP_Env(gym.Env):
-    def __init__(self, **kwargs, socket=None):
+    def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.websocket = socket
-        self.action_space = spaces.Box(
+        self.action_space = spaces.box(
             low=0,
             high=5,
-            shape=(10,)
+            shape=(11,)
         )
-        self.observation_space = spaces.Box(
+        self.observation_space = spaces.box(
             low=0,
             high=64,
             shape=(19, 3)
@@ -74,7 +74,7 @@ class SC2_CP_Env(gym.Env):
 
         request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
         request = sc_pb.Request(action=request_action)
-        await websocket.send(request.SerializeToString())
+        websocket.send(request.SerializeToString())
         response_data = await websocket.recv()
         response = sc_pb.Response.FromString(response_data)
 
