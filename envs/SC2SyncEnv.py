@@ -114,7 +114,7 @@ class SC2SyncEnv(BaseEnv):
             #for unit in response.observation.observation.raw_data.units:
                 if len(observation) > i:
                     unit = observation[i]
-                    derived_obs.append((unit.pos.x + 0) * (unit.pos.y + .0000000001))
+                    derived_obs.append((unit.pos.x + 0)/8 * (unit.pos.y + .0000000001)/8)
                 else:
                     derived_obs.append(0)
             self.derived_obs = derived_obs
@@ -128,7 +128,7 @@ class SC2SyncEnv(BaseEnv):
 
     def step(self, action):
         if len(self.obs.player_result) > 0:
-            self.restart_game()
+            self.sc2_manager.create_game()
             #raise Exception("Game ended")
 
             # get feature map
