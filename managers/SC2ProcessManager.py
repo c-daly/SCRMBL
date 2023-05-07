@@ -52,19 +52,25 @@ class SC2ProcessManager(object):
             print(f"Join Error {e}")
 
     def get_obs(self):
-        request = sc_pb.Request(observation=sc_pb.RequestObservation())
-        self.websocket.send(request.SerializeToString())
-        response_data = self.websocket.recv()
-        response = sc_pb.Response.FromString(response_data)
+        try:
+            request = sc_pb.Request(observation=sc_pb.RequestObservation())
+            self.websocket.send(request.SerializeToString())
+            response_data = self.websocket.recv()
+            response = sc_pb.Response.FromString(response_data)
+        except Exception as e:
+            print(f"get_obs error {e}")
         return response.observation
 
 
     def step(self):
-        # Step the game forward by a single step
-        request_step = sc_pb.RequestStep(count=2)
-        request = sc_pb.Request(step=request_step)
-        self.websocket.send(request.SerializeToString())
-        response_data = self.websocket.recv()
+        try:
+            # Step the game forward by a single step
+            request_step = sc_pb.RequestStep(count=2)
+            request = sc_pb.Request(step=request_step)
+            self.websocket.send(request.SerializeToString())
+            response_data = self.websocket.recv()
 
-        response = sc_pb.Response.FromString(response_data)
+            response = sc_pb.Response.FromString(response_data)
+        except Exception as e:
+            print(f"step error {e}")
         return response

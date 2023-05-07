@@ -22,7 +22,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
                                  log_path="./logs/raw_agent_runner/a2c/", eval_freq=100,
                                  deterministic=True, render=False,)
 
-    model = A2C('MlpPolicy', env, learning_rate=0.0000000001, gamma=0.99999, verbose=1)
+    model = A2C('MlpPolicy', env, learning_rate=0.0001, gamma=0.99999, verbose=1)
     #model = A2C.load("a2c_sc2_dbz")
     #model = A2C.load("logs/raw_agent_runner/a2c/best_model")
     model.env = env
