@@ -2,7 +2,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from envs.SC2SyncEnv import SC2SyncEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, PPO
 from absl import flags
 from contextlib import closing
 from time import sleep
@@ -19,17 +19,17 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
     eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/a2c/",
-                                 log_path="./logs/raw_agent_runner/a2c/", eval_freq=10,
+                                 log_path="./logs/raw_agent_runner/a2c/", eval_freq=100,
                                  deterministic=True, render=False,)
 
-    model = A2C('MlpPolicy', env, learning_rate=0.001, gamma=0.85, verbose=1)
+    model = A2C('MlpPolicy', env, learning_rate=0.0000000001, gamma=0.99999, verbose=1)
     #model = A2C.load("a2c_sc2_dbz")
     #model = A2C.load("logs/raw_agent_runner/a2c/best_model")
     model.env = env
     #env.reset()
     while True:
         try:
-            model.learn(total_timesteps=100, callback=[checkpoint_callback, eval_callback])
+            model.learn(total_timesteps=10000000, callback=[eval_callback, checkpoint_callback])
         except Exception as e:
             continue
             env.reset()
