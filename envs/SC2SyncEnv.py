@@ -24,7 +24,7 @@ class SC2SyncEnv(BaseEnv):
         self.reward = -10
         self.done = False
         self.info = None
-        self.action_space = MultiDiscrete([4096, 4096, 4096, 4096, 4096, 4096,4096, 4096, 4096, 4096, 4096])
+        self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4,4, 4, 4, 4, 4])
         self.observation_space = Box(
             low=0,
             high=256,
@@ -186,6 +186,50 @@ class SC2SyncEnv(BaseEnv):
             target_world_space_pos=common_pb.Point2D(x=x, y=y)
     )
 
+
+    def move_left(self, unit, pos):
+        marine = self.marines[unit]
+        unit_tag = self.marines[unit].tag
+        x = marine.pos.x - 2
+        y = marine.pos.y
+        return raw_pb.ActionRawUnitCommand(
+            ability_id=23,  # Move
+            unit_tags=[unit_tag],
+            target_world_space_pos=common_pb.Point2D(x=x, y=y)
+        )
+
+    def move_right(self, unit, pos):
+        marine = self.marines[unit]
+        unit_tag = self.marines[unit].tag
+        x = marine.pos.x + 2
+        y = marine.pos.y
+        return raw_pb.ActionRawUnitCommand(
+            ability_id=23,  # Move
+            unit_tags=[unit_tag],
+            target_world_space_pos=common_pb.Point2D(x=x, y=y)
+        )
+    def move_up(self, unit, pos):
+        marine = self.marines[unit]
+        unit_tag = self.marines[unit].tag
+        x = marine.pos.x
+        y = marine.pos.y - 2
+        return raw_pb.ActionRawUnitCommand(
+            ability_id=23,  # Move
+            unit_tags=[unit_tag],
+            target_world_space_pos=common_pb.Point2D(x=x, y=y)
+        )
+
+    def move_down(self, unit, pos):
+        marine = self.marines[unit]
+        unit_tag = self.marines[unit].tag
+        x = marine.pos.x
+        y = marine.pos.y + 2
+        return raw_pb.ActionRawUnitCommand(
+            ability_id=23,  # Move
+            unit_tags=[unit_tag],
+            target_world_space_pos=common_pb.Point2D(x=x, y=y)
+        )
+
     def attack_closest_enemy(unit, enemy_units):
         closest_enemy = None
         min_distance_sq = float("inf")
@@ -208,58 +252,128 @@ class SC2SyncEnv(BaseEnv):
         else:
             return None
 
+    # def take_action(self, action):
+    #     self.get_obs()
+    #     self.get_marines()
+    #     actions_pb = []
+    #     #for i, marine in enumerate(self.marines):
+    #     for i, marine in enumerate(self.marines):
+    #         if i < 12:
+    #             actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
+    #         else:
+    #             break
+    #
+    #
+    #     #for unit in self.observation.observation.raw_data.units:
+    #     #    if unit.alliance == 1:
+    #     #        action_func = random.choice([move_up, move_down, move_left, move_right])
+    #     #        action = random_move(unit, action)
+    #     #        actions_pb.append(raw_pb.ActionRaw(unit_command=action))
+    #
+    #     request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
+    #     request = sc_pb.Request(action=request_action)
+    #     self.websocket.send(request.SerializeToString())
+    #     try:
+    #         response_data = self.websocket.recv()
+    #     except Exception as e:
+    #         print(f"Error {e}")
+    #     response = sc_pb.Response.FromString(response_data)
+    #
+    #
+    #     corrective_actions = []
+    #     for i, result in enumerate(response.action.result):
+    #         if result > 1:
+    #             self.get_marines()
+    #             for i, marine in enumerate(self.marines):
+    #                 corrective_actions.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
+    #             break
+    #
+    #     if len(corrective_actions) > 0:
+    #         self.get_marines()
+    #         request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in corrective_actions])
+    #         request = sc_pb.Request(action=request_action)
+    #         try:
+    #             self.websocket.send(request.SerializeToString())
+    #         except Exception as e:
+    #             print(f"send error: {e}")
+    #         try:
+    #             response_data = self.websocket.recv()
+    #         except Exception as e:
+    #             print(f"Error {e}")
+    #         response = sc_pb.Response.FromString(response_data)
+    #
+    #     #if 1 not in response.action.result:
+    #     #    raise Exception()
+    #     if len(response.error) > 0:
+    #         for result in response.action.result:
+    #             print(f"Action Result: {result}")
+
     def take_action(self, action):
-        self.get_obs()
-        self.get_marines()
-        actions_pb = []
-        #for i, marine in enumerate(self.marines):
-        for i, marine in enumerate(self.marines):
-            if i < 12:
-                actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-            else:
-                break
-
-
-        #for unit in self.observation.observation.raw_data.units:
-        #    if unit.alliance == 1:
-        #        action_func = random.choice([move_up, move_down, move_left, move_right])
-        #        action = random_move(unit, action)
-        #        actions_pb.append(raw_pb.ActionRaw(unit_command=action))
-
-        request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
-        request = sc_pb.Request(action=request_action)
-        self.websocket.send(request.SerializeToString())
         try:
-            response_data = self.websocket.recv()
-        except Exception as e:
-            print(f"Error {e}")
-        response = sc_pb.Response.FromString(response_data)
-
-
-        corrective_actions = []
-        for i, result in enumerate(response.action.result):
-            if result > 1:
-                self.get_marines()
-                for i, marine in enumerate(self.marines):
-                    corrective_actions.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-                break
-
-        if len(corrective_actions) > 0:
+            self.get_obs()
             self.get_marines()
-            request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in corrective_actions])
+            actions_pb = []
+            #for i, marine in enumerate(self.marines):
+            for i, marine in enumerate(self.marines):
+                if i < 12:
+                    cmd = action[i]
+                    if cmd == 0:
+                        cmd_func = self.move_left
+                    elif cmd == 1:
+                        cmd_func = self.move_right
+                    elif cmd == 2:
+                        cmd_func = self.move_down
+                    elif cmd == 3:
+                        cmd_func = self.move_up
+                    else:
+                        raise Exception("Invalid action")
+                    #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
+                    actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(i, action[i])))
+                else:
+                    break
+
+
+            #for unit in self.observation.observation.raw_data.units:
+            #    if unit.alliance == 1:
+            #        action_func = random.choice([move_up, move_down, move_left, move_right])
+            #        action = random_move(unit, action)
+            #        actions_pb.append(raw_pb.ActionRaw(unit_command=action))
+
+            request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
             request = sc_pb.Request(action=request_action)
-            try:
-                self.websocket.send(request.SerializeToString())
-            except Exception as e:
-                print(f"send error: {e}")
-            try:
-                response_data = self.websocket.recv()
-            except Exception as e:
-                print(f"Error {e}")
+            self.websocket.send(request.SerializeToString())
+            #try:
+            response_data = self.websocket.recv()
+            #except Exception as e:
             response = sc_pb.Response.FromString(response_data)
 
-        #if 1 not in response.action.result:
-        #    raise Exception()
-        if len(response.error) > 0:
-            for result in response.action.result:
-                print(f"Action Result: {result}")
+
+            #corrective_actions = []
+            #for i, result in enumerate(response.action.result):
+            #    if result > 1:
+            #        self.get_marines()
+            #        for i, marine in enumerate(self.marines):
+            #            corrective_actions.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
+            #        break
+
+            #if len(corrective_actions) > 0:
+            #    self.get_marines()
+            #    request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in corrective_actions])
+            #    request = sc_pb.Request(action=request_action)
+            #    try:
+            #        self.websocket.send(request.SerializeToString())
+            #    except Exception as e:
+            #        print(f"send error: {e}")
+            #    try:
+            #        response_data = self.websocket.recv()
+            #    except Exception as e:
+            #        print(f"Error {e}")
+            #    response = sc_pb.Response.FromString(response_data)
+
+            #if 1 not in response.action.result:
+            #    raise Exception()
+            if len(response.error) > 0:
+                for result in response.action.result:
+                    print(f"Action Result: {result}")
+        except Exception as e:
+            print(f"take action error {e}")
