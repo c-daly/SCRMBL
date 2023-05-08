@@ -36,7 +36,12 @@ class SC2ProcessManager(object):
             race=common_pb.Terran,
             options=sc_pb.InterfaceOptions(
                 raw=True,
-
+                score=True,
+                #render=sc_pb.SpatialCameraSetup(
+                #),
+                feature_layer=sc_pb.SpatialCameraSetup(
+                    width=64,
+                ),
             )
         )
         request = sc_pb.Request(join_game=join_game)
@@ -61,7 +66,7 @@ class SC2ProcessManager(object):
 
     def step(self):
         # Step the game forward by a single step
-        request_step = sc_pb.RequestStep(count=2)
+        request_step = sc_pb.RequestStep(count=32)
         request = sc_pb.Request(step=request_step)
         self.websocket.send(request.SerializeToString())
         response_data = self.websocket.recv()

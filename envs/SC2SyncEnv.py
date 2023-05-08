@@ -1,5 +1,5 @@
 #from gym.spaces import Discrete
-from gym.spaces import Box, Discrete, MultiDiscrete
+from gym.spaces import Box, Discrete, MultiDiscrete, Tuple
 
 from envs.BaseEnv import BaseEnv
 from gym import spaces
@@ -14,7 +14,9 @@ import random
 class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, **kwargs):
         super().__init__()
+        self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket)
+        self.derived_obs = []
         self.enemies_killed_last_step = 0
         self.marines = []
         self.enemies = []
@@ -26,9 +28,9 @@ class SC2SyncEnv(BaseEnv):
         self.info = None
         self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4,4, 4, 4, 4, 4])
         self.observation_space = Box(
-            low=0,
-            high=256,
-            shape=(19,),
+            low=-1,
+            high=64,
+            shape=(19,2),
             dtype=np.float32
         )
         #self.action_space = Discrete(9)
@@ -87,6 +89,7 @@ class SC2SyncEnv(BaseEnv):
 
     def reset(self):
         #self.create_game()
+        self.derived_obs = []
         self.reward = 0
         self.enemies_killed = 0
         self.enemies_killed_last_step = 0
@@ -110,14 +113,25 @@ class SC2SyncEnv(BaseEnv):
             observation = self.obs.observation.raw_data.units
             self.raw_obs = observation
             derived_obs = []
+            x_s = []
+            y_s = []
             for i in range(19):
             #for unit in response.observation.observation.raw_data.units:
                 if len(observation) > i:
                     unit = observation[i]
-                    derived_obs.append((unit.pos.x + 0)/8 * (unit.pos.y + .0000000001)/8)
+                    #new_obs = ((unit.pos.x + 0.1) * (unit.pos.y + 0.1))
+                    #new_obs = ((unit.pos.x + .001)/8) * ((unit.pos.y + .001)/8)
+                    new_obs = [unit.pos.x, unit.pos.y]
+                    x_s.append(unit.pos.x)
+                    y_s.append(unit.pos.y)
+                    #derived_obs.append(np.log((unit.pos.x + 0.1) * (unit.pos.y + .1)))
+                    derived_obs.append(new_obs)
                 else:
-                    derived_obs.append(0)
+                    x_s.append(-1)
+                    y_s.append(-1)
+                    derived_obs.append([-1,-1])
             self.derived_obs = derived_obs
+            #self.derived_obs = [x_s, y_s]
         except Exception as e:
             print(f"get_obs error: {e}")
         return self.derived_obs
@@ -157,7 +171,12 @@ class SC2SyncEnv(BaseEnv):
                 #self.reset()
         self.enemies_killed += enemies_killed
         #self.reward = len(self.marines) - len(self.enemies) + enemies_killed
-        self.reward = np.log(max((len(self.marines) + enemies_killed)/max(len(self.enemies), 1), 1))
+        self.last_kill_value = self.reward
+        self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
+        #print(self.reward)
+
+
+        #self.reward = np.log(max((len(self.marines) + enemies_killed)/max(len(self.enemies), 1), 1))
         #print(f"Reward: {self.reward}")
         return self.derived_obs, self.reward, self.done, self.info
     def render(self):
@@ -252,62 +271,6 @@ class SC2SyncEnv(BaseEnv):
         else:
             return None
 
-    # def take_action(self, action):
-    #     self.get_obs()
-    #     self.get_marines()
-    #     actions_pb = []
-    #     #for i, marine in enumerate(self.marines):
-    #     for i, marine in enumerate(self.marines):
-    #         if i < 12:
-    #             actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-    #         else:
-    #             break
-    #
-    #
-    #     #for unit in self.observation.observation.raw_data.units:
-    #     #    if unit.alliance == 1:
-    #     #        action_func = random.choice([move_up, move_down, move_left, move_right])
-    #     #        action = random_move(unit, action)
-    #     #        actions_pb.append(raw_pb.ActionRaw(unit_command=action))
-    #
-    #     request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
-    #     request = sc_pb.Request(action=request_action)
-    #     self.websocket.send(request.SerializeToString())
-    #     try:
-    #         response_data = self.websocket.recv()
-    #     except Exception as e:
-    #         print(f"Error {e}")
-    #     response = sc_pb.Response.FromString(response_data)
-    #
-    #
-    #     corrective_actions = []
-    #     for i, result in enumerate(response.action.result):
-    #         if result > 1:
-    #             self.get_marines()
-    #             for i, marine in enumerate(self.marines):
-    #                 corrective_actions.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-    #             break
-    #
-    #     if len(corrective_actions) > 0:
-    #         self.get_marines()
-    #         request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in corrective_actions])
-    #         request = sc_pb.Request(action=request_action)
-    #         try:
-    #             self.websocket.send(request.SerializeToString())
-    #         except Exception as e:
-    #             print(f"send error: {e}")
-    #         try:
-    #             response_data = self.websocket.recv()
-    #         except Exception as e:
-    #             print(f"Error {e}")
-    #         response = sc_pb.Response.FromString(response_data)
-    #
-    #     #if 1 not in response.action.result:
-    #     #    raise Exception()
-    #     if len(response.error) > 0:
-    #         for result in response.action.result:
-    #             print(f"Action Result: {result}")
-
     def take_action(self, action):
         try:
             self.get_obs()
@@ -332,13 +295,6 @@ class SC2SyncEnv(BaseEnv):
                 else:
                     break
 
-
-            #for unit in self.observation.observation.raw_data.units:
-            #    if unit.alliance == 1:
-            #        action_func = random.choice([move_up, move_down, move_left, move_right])
-            #        action = random_move(unit, action)
-            #        actions_pb.append(raw_pb.ActionRaw(unit_command=action))
-
             request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
             request = sc_pb.Request(action=request_action)
             self.websocket.send(request.SerializeToString())
@@ -347,31 +303,6 @@ class SC2SyncEnv(BaseEnv):
             #except Exception as e:
             response = sc_pb.Response.FromString(response_data)
 
-
-            #corrective_actions = []
-            #for i, result in enumerate(response.action.result):
-            #    if result > 1:
-            #        self.get_marines()
-            #        for i, marine in enumerate(self.marines):
-            #            corrective_actions.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-            #        break
-
-            #if len(corrective_actions) > 0:
-            #    self.get_marines()
-            #    request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in corrective_actions])
-            #    request = sc_pb.Request(action=request_action)
-            #    try:
-            #        self.websocket.send(request.SerializeToString())
-            #    except Exception as e:
-            #        print(f"send error: {e}")
-            #    try:
-            #        response_data = self.websocket.recv()
-            #    except Exception as e:
-            #        print(f"Error {e}")
-            #    response = sc_pb.Response.FromString(response_data)
-
-            #if 1 not in response.action.result:
-            #    raise Exception()
             if len(response.error) > 0:
                 for result in response.action.result:
                     print(f"Action Result: {result}")
