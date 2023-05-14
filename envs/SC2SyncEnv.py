@@ -26,17 +26,34 @@ class SC2SyncEnv(BaseEnv):
         self.reward = -10
         self.done = False
         self.info = None
-        self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4,4, 4, 4, 4, 4])
+        self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
+        self.map_high = 64
+        self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         self.observation_space = Box(
             low=-1,
-            high=64,
-            shape=(19,2),
-            dtype=np.float32
+            high=10,
+            shape=(self.map_high,self.map_high),
+            dtype=np.int
         )
         #self.action_space = Discrete(9)
         #self.observation_space = Discrete(9)
         self.sc2_manager.create_game()
 
+    def print_pixelmap(self):
+        self.get_marines()
+        for i, marine in enumerate(self.marines):
+            x = int(marine.pos.x)
+            y = int(marine.pos.y)
+            self.map[x][y] = i
+
+        for i, enemy in enumerate(self.enemies):
+            x = int(enemy.pos.x)
+            y = int(enemy.pos.y)
+            self.map[x][y] = -1
+        #for x in range(self.map_high):
+        #    for y in range(self.map_high):
+        #        print(f"({x},{y}")
+        return(self.map)
     def restart_game(self):
         self.create_game()
         self.reset()
@@ -112,28 +129,30 @@ class SC2SyncEnv(BaseEnv):
             self.obs = self.sc2_manager.get_obs()
             observation = self.obs.observation.raw_data.units
             self.raw_obs = observation
-            derived_obs = []
+            derived_obs = self.map #[]
             x_s = []
             y_s = []
-            for i in range(19):
+            #for i in range(19):
             #for unit in response.observation.observation.raw_data.units:
-                if len(observation) > i:
-                    unit = observation[i]
-                    #new_obs = ((unit.pos.x + 0.1) * (unit.pos.y + 0.1))
+            #    if len(observation) > i:
+            #        unit = observation[i]
+            #        #new_obs = ((unit.pos.x + 0.1) * (unit.pos.y + 0.1))
                     #new_obs = ((unit.pos.x + .001)/8) * ((unit.pos.y + .001)/8)
-                    new_obs = [unit.pos.x, unit.pos.y]
-                    x_s.append(unit.pos.x)
-                    y_s.append(unit.pos.y)
+            #        new_obs = [unit.pos.x, unit.pos.y]
+            #        x_s.append(unit.pos.x)
+            #        y_s.append(unit.pos.y)
                     #derived_obs.append(np.log((unit.pos.x + 0.1) * (unit.pos.y + .1)))
-                    derived_obs.append(new_obs)
-                else:
-                    x_s.append(-1)
-                    y_s.append(-1)
-                    derived_obs.append([-1,-1])
-            self.derived_obs = derived_obs
+            #        derived_obs.append(new_obs)
+            #    else:
+            #        x_s.append(-1)
+            #        y_s.append(-1)
+            #        derived_obs.append([-1,-1])
+            #self.derived_obs = derived_obs
+            self.derived_obs = self.print_pixelmap()
             #self.derived_obs = [x_s, y_s]
         except Exception as e:
             print(f"get_obs error: {e}")
+
         return self.derived_obs
 
     def get_marines(self):
@@ -158,7 +177,7 @@ class SC2SyncEnv(BaseEnv):
         #    request = sc_pb.Request(step=request_step)
         #    self.websocket.send(request.SerializeToString())
         #    response_data = self.websocket.recv()
-
+            self.print_pixelmap()
         except Exception as e:
             print(f"Step error: {e}")
             self.restart_game()
@@ -195,10 +214,10 @@ class SC2SyncEnv(BaseEnv):
             target_world_space_pos=common_pb.Point2D(x=x, y=y)
     )
 
-    def random_attack(self, unit, pos):
+    def random_attack(self, unit):
         unit_tag = self.marines[unit].tag
-        x = pos % 64
-        y = pos / 64
+        x = np.random.uniform(0,64)
+        y = np.random.uniform(0,64)
         return raw_pb.ActionRawUnitCommand(
             ability_id=23,  # Move
             unit_tags=[unit_tag],
@@ -278,7 +297,7 @@ class SC2SyncEnv(BaseEnv):
             actions_pb = []
             #for i, marine in enumerate(self.marines):
             for i, marine in enumerate(self.marines):
-                if i < 12:
+                if i < 9:
                     cmd = action[i]
                     if cmd == 0:
                         cmd_func = self.move_left
@@ -293,6 +312,7 @@ class SC2SyncEnv(BaseEnv):
                     #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
                     actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(i, action[i])))
                 else:
+                    actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i)))
                     break
 
             request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])

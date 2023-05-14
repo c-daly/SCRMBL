@@ -14,18 +14,20 @@ FLAGS([''])
 
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path="./logs/raw_agent_runner/a2c",
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path="./logs/raw_agent_runner/ppo",
                                              name_prefix="rl_model")
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
-    eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/a2c/",
-                                 log_path="./logs/raw_agent_runner/a2c/", eval_freq=100,
+    eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/ppo/",
+                                 log_path="./logs/raw_agent_runner/ppo/", eval_freq=64,
                                  deterministic=True, render=False,)
 
-    model = A2C('MlpPolicy', env=env, learning_rate=0.00001, gamma=0.9, verbose=1)
+    #model = PPO('MlpPolicy', env=env, learning_rate=0.0001, gamma=0.9, verbose=1)
     #model = A2C.load("a2c_sc2_dbz")
     #model = A2C.load("logs/raw_agent_runner/a2c/best_model")
-    #model.env = env
+    #model = A2C.load("logs/raw_agent_runner_new_obs/a2c/rl_model_1000_steps")
+    model = PPO.load("logs/raw_agent_runner/ppo/rl_model_848_steps")
+    model.env = env
     #env.reset()
     while True:
         try:
@@ -42,7 +44,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     #    obs = env.reset()
     #    try:
     #        action, _states = model.predict(obs)
-    #        obs, rewards, dones, info = vec_env.step(action)
+    #        obs, rewards, dones, info = env.step(action)
 
     #    except Exception as e:
     #        print(f"Error {e}")
