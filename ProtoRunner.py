@@ -14,24 +14,25 @@ FLAGS([''])
 
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path="./logs/raw_agent_runner/ppo",
+    checkpoint_callback = CheckpointCallback(save_freq=100, save_path="./logs/raw_agent_runner/ppo",
                                              name_prefix="rl_model")
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
     eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/ppo/",
-                                 log_path="./logs/raw_agent_runner/ppo/", eval_freq=64,
+                                 log_path="./logs/raw_agent_runner/ppo/", eval_freq=100,
                                  deterministic=True, render=False,)
 
     #model = PPO('MlpPolicy', env=env, learning_rate=0.0001, gamma=0.9, verbose=1)
     #model = A2C.load("a2c_sc2_dbz")
     #model = A2C.load("logs/raw_agent_runner/a2c/best_model")
+    model = PPO.load("logs/raw_agent_runner/PPO/best_model")
     #model = A2C.load("logs/raw_agent_runner_new_obs/a2c/rl_model_1000_steps")
-    model = PPO.load("logs/raw_agent_runner/ppo/rl_model_848_steps")
+    #model = PPO.load("logs/raw_agent_runner/ppo/rl_model_1216_steps.zip")
     model.env = env
     #env.reset()
     while True:
         try:
-            model.learn(total_timesteps=1000, callback=[eval_callback, checkpoint_callback])
+            model.learn(total_timesteps=10000, callback=[eval_callback, checkpoint_callback])
         except Exception as e:
             env.reset()
             continue

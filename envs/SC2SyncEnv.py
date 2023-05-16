@@ -23,7 +23,8 @@ class SC2SyncEnv(BaseEnv):
         self.enemies_killed = 0
         self.websocket = websocket
         self.observation = None
-        self.reward = -10
+        self.last_reward = 0
+        self.reward = 0
         self.done = False
         self.info = None
         self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
@@ -41,6 +42,7 @@ class SC2SyncEnv(BaseEnv):
 
     def print_pixelmap(self):
         self.get_marines()
+        self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         for i, marine in enumerate(self.marines):
             x = int(marine.pos.x)
             y = int(marine.pos.y)
@@ -107,6 +109,7 @@ class SC2SyncEnv(BaseEnv):
     def reset(self):
         #self.create_game()
         self.derived_obs = []
+        self.last_reward = 0
         self.reward = 0
         self.enemies_killed = 0
         self.enemies_killed_last_step = 0
@@ -188,10 +191,10 @@ class SC2SyncEnv(BaseEnv):
                 #self.create_game()
                 self.done = True
                 #self.reset()
-        self.enemies_killed += enemies_killed
         #self.reward = len(self.marines) - len(self.enemies) + enemies_killed
-        self.last_kill_value = self.reward
-        self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
+        #self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
+        self.reward = self.last_reward
+        self.reward = self.obs.observation.score.score - self.last_reward
         #print(self.reward)
 
 
