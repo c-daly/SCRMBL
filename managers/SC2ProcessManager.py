@@ -2,15 +2,16 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 class SC2ProcessManager(object):
-    def __init__(self, websocket):
+    def __init__(self, websocket, scenario):
         self.websocket = websocket
+        self.scenario = scenario
 
     def create_game(self):
         response = None
         create_game = sc_pb.RequestCreateGame(
             realtime=False,
             # local_map=sc_pb.LocalMap(map_path="melee/Simple64.SC2Map")
-            local_map=sc_pb.LocalMap(map_path="mini_games/DefeatZerglingsAndBanelings.SC2Map"),
+            local_map=sc_pb.LocalMap(map_path="mini_games/" + self.scenario.map_name),
             # player_setup=[
             #    sc_pb.PlayerSetup(type=sc_pb.Participant)  # Human
             #    #sc_pb.PlayerSetup(type=sc_pb.Computer)  # Human
@@ -60,12 +61,12 @@ class SC2ProcessManager(object):
         self.websocket.send(request.SerializeToString())
         response_data = self.websocket.recv()
         response = sc_pb.Response.FromString(response_data)
-        return response.observation
+        return self.scenario.get_derived_obs_from_raw(response.observation)
 
 
     def step(self):
         # Step the game forward by a single step
-        request_step = sc_pb.RequestStep(count=16)
+        request_step = sc_pb.RequestStep(count=8)
         request = sc_pb.Request(step=request_step)
         self.websocket.send(request.SerializeToString())
         response_data = self.websocket.recv()

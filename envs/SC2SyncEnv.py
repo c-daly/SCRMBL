@@ -8,14 +8,17 @@ from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 from managers.SC2ProcessManager import SC2ProcessManager
 import numpy as np
+from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario
 
 import random
 
 class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, **kwargs):
         super().__init__()
+        #self.scenario = SC2MiniMapScenario()
+        self.scenario = MoveToBeaconScenario()
         self.last_kill_value = 0
-        self.sc2_manager = SC2ProcessManager(websocket)
+        self.sc2_manager = SC2ProcessManager(websocket, self.scenario)
         self.derived_obs = []
         self.enemies_killed_last_step = 0
         self.marines = []
@@ -27,38 +30,39 @@ class SC2SyncEnv(BaseEnv):
         self.reward = 0
         self.done = False
         self.info = None
-        self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
+        self.action_space = self.scenario.action_space #MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
         self.map_high = 64
-        self.map = np.zeros((self.map_high, self.map_high), dtype=int)
-        self.observation_space = Box(
-            low=-1,
-            high=10,
-            shape=(self.map_high,self.map_high),
-            dtype=np.int
-        )
+        #self.map = np.zeros((self.map_high, self.map_high), dtype=int)
+        #self.observation_space = Box(
+        #    low=-1,
+        #    high=10,
+        #    shape=(self.map_high,self.map_high),
+        #    dtype=np.int
+        #)
+        self.observation_space = self.scenario.observation_space
         #self.action_space = Discrete(9)
         #self.observation_space = Discrete(9)
         self.sc2_manager.create_game()
 
-    def print_pixelmap(self):
-        self.get_marines()
-        self.map = np.zeros((self.map_high, self.map_high), dtype=int)
-        for i, marine in enumerate(self.marines):
-            x = int(marine.pos.x)
-            y = int(marine.pos.y)
-            self.map[x][y] = i
+    #def print_pixelmap(self):
+    #    self.get_marines()
+    #    self.map = np.zeros((self.map_high, self.map_high), dtype=int)
+    #    for i, marine in enumerate(self.marines):
+    #        x = int(marine.pos.x)
+    #        y = int(marine.pos.y)
+    #        self.map[x][y] = i
 
-        for i, enemy in enumerate(self.enemies):
-            x = int(enemy.pos.x)
-            y = int(enemy.pos.y)
-            self.map[x][y] = -1
+    #    for i, enemy in enumerate(self.enemies):
+    #        x = int(enemy.pos.x)
+    #        y = int(enemy.pos.y)
+    #        self.map[x][y] = -1
         #for x in range(self.map_high):
         #    for y in range(self.map_high):
         #        print(f"({x},{y}")
-        return(self.map)
-    def restart_game(self):
-        self.create_game()
-        self.reset()
+    #    return(self.map)
+    #def restart_game(self):
+    #    self.sc2_manager.create_game()
+    #    self.reset()
 
     #def create_game(self):
     #    response = None
@@ -107,6 +111,7 @@ class SC2SyncEnv(BaseEnv):
     #        print(f"Join Error {e}")
 
     def reset(self):
+        self.obs = None
         #self.create_game()
         self.derived_obs = []
         self.last_reward = 0
@@ -130,9 +135,10 @@ class SC2SyncEnv(BaseEnv):
         #    except Exception as e:
         #        print(f"Error {e}")
             self.obs = self.sc2_manager.get_obs()
-            observation = self.obs.observation.raw_data.units
-            self.raw_obs = observation
-            derived_obs = self.map #[]
+            self.raw_obs = self.obs
+            #observation = self.scneario.get_derived_obs_from_raw(self.obs.observation.raw_data.units)
+            #self.raw_obs =  observation
+            derived_obs = self.scenario.map #[]
             x_s = []
             y_s = []
             #for i in range(19):
@@ -151,27 +157,28 @@ class SC2SyncEnv(BaseEnv):
             #        y_s.append(-1)
             #        derived_obs.append([-1,-1])
             #self.derived_obs = derived_obs
-            self.derived_obs = self.print_pixelmap()
+            #self.derived_obs = self.print_pixelmap()
             #self.derived_obs = [x_s, y_s]
         except Exception as e:
             print(f"get_obs error: {e}")
 
-        return self.derived_obs
+        return self.obs
 
     def get_marines(self):
-        self.marines = [unit for unit in self.raw_obs if unit.alliance == 1]
+        #self.marines = [unit for unit in self.raw_obs if unit.alliance == 1]
+        self.marines = self.scenario.marines
         return self.marines
 
     def step(self, action):
-        if len(self.obs.player_result) > 0:
-            self.sc2_manager.create_game()
+        #if len(self.obs.player_result) > 0:
+        #    self.sc2_manager.create_game()
             #raise Exception("Game ended")
 
             # get feature map
             #self.reset()
-        self.get_marines()
-        self.enemies = [unit for unit in self.raw_obs if unit.alliance != 1]
+        #self.enemies = [unit for unit in self.raw_obs if unit.alliance != 1]
         try:
+            self.get_marines()
             self.take_action(action)
             enemies_killed = max(9 - len(self.enemies), 0)
             # Step the game forward by a single step
@@ -180,27 +187,28 @@ class SC2SyncEnv(BaseEnv):
         #    request = sc_pb.Request(step=request_step)
         #    self.websocket.send(request.SerializeToString())
         #    response_data = self.websocket.recv()
-            self.print_pixelmap()
+            response = self.sc2_manager.step()
+            #response = sc_pb.Response.FromString(response_data)
+            if response.status != 3:
+                if response.status == 5:
+                    self.sc2_manager.create_game()
+                    #self.done = True
+                    #self.reset()
+            #self.reward = len(self.marines) - len(self.enemies) + enemies_killed
+            #self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
+            self.reward = self.scenario.raw_obs.observation.score.score # - self.last_reward
+            #self.last_reward = self.reward
+            #print(self.reward)
+
+
+            #self.reward = np.log(max((len(self.marines) + enemies_killed)/max(len(self.enemies), 1), 1))
+            #print(f"Reward: {self.reward}")
+
+
         except Exception as e:
             print(f"Step error: {e}")
-            self.restart_game()
-        response = self.sc2_manager.step()
-        #response = sc_pb.Response.FromString(response_data)
-        if response.status != 3:
-            if response.status == 5:
-                #self.create_game()
-                self.done = True
-                #self.reset()
-        #self.reward = len(self.marines) - len(self.enemies) + enemies_killed
-        #self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
-        self.reward = self.last_reward
-        self.reward = self.obs.observation.score.score - self.last_reward
-        #print(self.reward)
-
-
-        #self.reward = np.log(max((len(self.marines) + enemies_killed)/max(len(self.enemies), 1), 1))
-        #print(f"Reward: {self.reward}")
-        return self.derived_obs, self.reward, self.done, self.info
+            #self.restart_game()
+        return self.obs, self.reward, self.done, self.info
     def render(self):
         pass
 
@@ -294,11 +302,14 @@ class SC2SyncEnv(BaseEnv):
             return None
 
     def take_action(self, action):
+        actions_pb = []
         try:
+
             self.get_obs()
             self.get_marines()
-            actions_pb = []
             #for i, marine in enumerate(self.marines):
+            if len(self.marines) == 1:
+                action = [action]
             for i, marine in enumerate(self.marines):
                 if i < 9:
                     cmd = action[i]

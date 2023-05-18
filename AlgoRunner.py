@@ -17,11 +17,11 @@ FLAGS([''])
 
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path="./logs/raw_agent_runner/ppo",
+    checkpoint_callback = CheckpointCallback(save_freq=5000, save_path="./logs/raw_agent_runner/qlearn",
                                              name_prefix="rl_model")
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
-    eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/ppo/",
+    eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/qlearn/",
                                  log_path="./logs/raw_agent_runner/ppo/", eval_freq=64,
                                  deterministic=True, render=False,)
 
@@ -44,8 +44,8 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
             model.learn()
         except Exception as e:
             raise e
-            #env.reset()
-            #continue
+            env.reset()
+            continue
 
     #model.learn(total_timesteps=100000)
     #model.save("a2c_sc2_dbz")
