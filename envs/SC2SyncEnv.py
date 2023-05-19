@@ -8,14 +8,13 @@ from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 from managers.SC2ProcessManager import SC2ProcessManager
 import numpy as np
-from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario
+from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
 
 import random
 
 class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, **kwargs):
         super().__init__()
-        #self.scenario = SC2MiniMapScenario()
         self.scenario = MoveToBeaconScenario()
         self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket, self.scenario)
@@ -226,26 +225,32 @@ class SC2SyncEnv(BaseEnv):
     )
 
     def random_attack(self, unit):
-        unit_tag = self.marines[unit].tag
-        x = np.random.uniform(0,64)
-        y = np.random.uniform(0,64)
-        return raw_pb.ActionRawUnitCommand(
-            ability_id=23,  # Move
-            unit_tags=[unit_tag],
-            target_world_space_pos=common_pb.Point2D(x=x, y=y)
-    )
+        try:
+            unit_tag = self.marines[unit].tag
+            x = np.random.uniform(0,64)
+            y = np.random.uniform(0,64)
+            return raw_pb.ActionRawUnitCommand(
+                ability_id=23,  # Move
+                unit_tags=[unit_tag],
+                target_world_space_pos=common_pb.Point2D(x=x, y=y)
+            )
+        except Exception as e:
+            print(f"attack action error {e}")
 
 
     def move_left(self, unit, pos):
-        marine = self.marines[unit]
-        unit_tag = self.marines[unit].tag
-        x = marine.pos.x - 2
-        y = marine.pos.y
-        return raw_pb.ActionRawUnitCommand(
-            ability_id=23,  # Move
-            unit_tags=[unit_tag],
-            target_world_space_pos=common_pb.Point2D(x=x, y=y)
-        )
+        try:
+            marine = self.marines[unit]
+            unit_tag = self.marines[unit].tag
+            x = marine.pos.x - 2
+            y = marine.pos.y
+            return raw_pb.ActionRawUnitCommand(
+                ability_id=23,  # Move
+                unit_tags=[unit_tag],
+                target_world_space_pos=common_pb.Point2D(x=x, y=y)
+            )
+        except Exception as e:
+            print(f"move left error {e}")
 
     def move_right(self, unit, pos):
         marine = self.marines[unit]
@@ -302,13 +307,12 @@ class SC2SyncEnv(BaseEnv):
             return None
 
     def take_action(self, action):
-        actions_pb = []
         try:
-
+            actions_pb = []
             self.get_obs()
             self.get_marines()
             #for i, marine in enumerate(self.marines):
-            if len(self.marines) == 1:
+            if np.isscalar(action):
                 action = [action]
             for i, marine in enumerate(self.marines):
                 if i < 9:
@@ -325,6 +329,7 @@ class SC2SyncEnv(BaseEnv):
                         raise Exception("Invalid action")
                     #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
                     actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(i, action[i])))
+
                 else:
                     actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i)))
                     break
