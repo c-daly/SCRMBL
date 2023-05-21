@@ -1,5 +1,3 @@
-import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Dense, Input
@@ -35,7 +33,7 @@ class ReplayBuffer:
         self.size = min(self.size + 1, self.capacity)
 
     def sample(self, batch_size):
-        indices = np.random.choice(self.size, size=batch_size, replace=False)
+        indices = np.random.choice(self.size, size=self.batch_size, replace=False)
         state, action, reward, next_state, done = zip(*self.buffer[indices])
 
         return (np.array(state, dtype=np.float32),
@@ -44,54 +42,8 @@ class ReplayBuffer:
                 np.array(next_state, dtype=np.float32),
                 np.array(done, dtype=np.bool))
 
-#class ReplayBuffer:
-#    def __init__(self, capacity):
-#        self.capacity = capacity
-#        self.buffer = []
-#        self.memory = np.array([])
-#        self.position = 0
-
-#    def push(self, state, action, reward, next_state, done):
-#        if len(self.buffer) < self.capacity:
-#            self.buffer.append(None)
-#        self.buffer[self.position] = (state, action, reward, next_state, done)
-#        self.position = (self.position + 1) % self.capacity
-
-    #def sample(self, batch_size):
-    #    batch = np.random.choice(len(self.buffer), batch_size, replace=False)
-    #    state, action, reward, next_state, done = zip(*[self.buffer[idx] for idx in batch])
-    #    return np.stack(state), action, reward, np.stack(next_state), done
-
-    #def sample(self, batch_size):
-    #    idx = np.random.choice(len(self.buffer), batch_size, replace=False)
-    #    batch = np.array(self.buffer)[idx]
-#    #    state = np.stack(batch[:, 0])
-    #    action = batch[:, 1]
-    #    reward = batch[:, 2]
-    #    next_state = np.stack(batch[:, 3])
-    #    done = batch[:, 4]
-
-    #    return state, action, reward, next_state, done
-
-#    def sample(self, batch_size):
-#        indices = np.random.randint(len(self.buffer), size=batch_size)
-#        minibatch = [self.buffer[i] for i in indices]
-#        state, action, reward, next_state, done = map(np.array, zip(*minibatch))
-#
-#        # Convert to appropriate data types
-#        state = state.astype(np.float32)
-#        action = action.astype(np.int32)
-#        reward = reward.astype(np.float32)
-#        next_state = next_state.astype(np.float32)
-#        done = done.astype(np.bool)
-
-#        return state, action, reward, next_state, done
-
-#    def __len__(self):
-#        return len(self.buffer)
-
 class DQNAgent:
-    def __init__(self, state_space, action_space, epsilon=0.9, gamma=0.95, lr=1e-3):
+    def __init__(self, state_space, action_space, env, epsilon=0.9, gamma=0.95, lr=1e-3):
         self.state_shape = state_space
         self.action_space = action_space
         self.n_actions = action_space
@@ -100,20 +52,8 @@ class DQNAgent:
         self.epsilon = epsilon
         self.gamma = gamma
         self.model = self.create_model(lr)
-
-    #def create_md_model(self):
-    #    # Input layer
-    #    input_layer = layers.Input(shape=m_observation_space,))
-
-        # Hidden layers
-    #    hidden_layer1 = layers.Dense(64, activation='relu')(input_layer)
-    #    hidden_layer2 = layers.Dense(64, activation='relu')(hidden_layer1)
-
-        # Output layers
-    #    output_layers = [layers.Dense(4, activation='linear')(hidden_layer2) for _ in range(9)]
-
-        # Create model
-    #    model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
+        self.replay_buffer = ReplayBuffer(capacity=50)
+        self.env = env
 
     def create_model(self, lr):
 
@@ -157,10 +97,10 @@ class DQNAgent:
     def train(self, replay_buffer, batch_size=10):
         #if len(replay_buffer) < batch_size:
         #    return
-        if replay_buffer.size < batch_size:
+        if self.replay_buffer.size < self.batch_size:
             return
         try:
-            state, action, reward, next_state, done = replay_buffer.sample(batch_size)
+            state, action, reward, next_state, done=self.replay_buffer.sample(self.batch_size)
             action = np.array(action)
             reward = np.array(reward)
             done = np.array(done)
@@ -189,7 +129,7 @@ class DQNAgent:
 
             #target[~done][0][action[not_done_indices]] = reward_scaled[not_done_indices] + reward_next_scaled[not_done_indices]
             #np.array(target)[not_done_indices][0][action[not_done_indices]] =  np.array(target_next)[not_done_indices]
-            for idx in range(batch_size):
+            for idx in range(self.batch_size):
                 #if not isinstance(target[0], int):
                 #    target = target[0]
                 if idx >= len(target):
@@ -214,46 +154,31 @@ class DQNAgent:
         except Exception as e:
             print(f"error: {e}")
 
-with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    tf.get_logger().setLevel('ERROR')
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/raw_agent_runner/ppo",
-                                             name_prefix="rl_model")
-    env = SC2SyncEnv(websocket)
-    env = DummyVecEnv([lambda: Monitor(env)])
-    actions_n = 0
-    n_games = 10000
-    batch_size = 5
-    replay_buffer = ReplayBuffer(capacity=50)
+    def learn(self, n_games, batch_size):
+        self.batch_size = batch_size
+        for i in range(n_games):
+            state = self.env.reset()
+            total_reward = 0
 
-    if isinstance(env.action_space, gym.spaces.MultiDiscrete):
-        actions_n = env.action_space.nvec[0]
-    else:
-        actions_n = env.action_space.n
-    #agent = DQNAgent(env.observation_space.shape, env.action_space.n)
-    agent = DQNAgent(env.observation_space.shape, actions_n)
+            while True:
+                action = self.act(state[np.newaxis, :])  # Reshape to (1, 84, 84, 4)
+                next_state, reward, done, _ = self.env.step(action)
+                # print(f"action/reward: {action}/{reward}")
+                next_state = next_state.reshape(next_state.shape[1:])
+                self.replay_buffer.push(state, action, reward, next_state, done)
+                state = next_state
+                total_reward += reward
 
-    for i in range(n_games):
-        state = env.reset()
-        state = state.reshape(state.shape[1:])
-        total_reward = 0
+                if done:
+                    break
 
-        while True:
-            action = agent.act(state[np.newaxis, :])  # Reshape to (1, 84, 84, 4)
-            next_state, reward, done, _ = env.step([action])
-            #print(f"action/reward: {action}/{reward}")
-            next_state = next_state.reshape(next_state.shape[1:])
-            replay_buffer.push(state, action, reward, next_state, done)
-            state = next_state
-            total_reward += reward
+                self.train(self.replay_buffer, self.batch_size)
 
-            if done:
-                break
+            if i % 10 == 0:
+                print(f"Episode: {i}, Reward: {total_reward}")
 
-            agent.train(replay_buffer, batch_size)
+            # Epsilon decay
+            if self.epsilon > 0.01:
+                self.epsilon *= 0.995
 
-        if i % 10 == 0:
-            print(f"Episode: {i}, Reward: {total_reward}")
 
-        # Epsilon decay
-        if agent.epsilon > 0.01:
-            agent.epsilon *= 0.995

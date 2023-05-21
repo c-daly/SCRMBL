@@ -30,7 +30,7 @@ class SC2SyncEnv(BaseEnv):
         self.done = False
         self.info = None
         self.action_space = self.scenario.action_space #MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
-        self.map_high = 128
+        #self.map_high = 128
         #self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         #self.observation_space = Box(
         #    low=-1,

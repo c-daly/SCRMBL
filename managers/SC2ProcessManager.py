@@ -66,7 +66,7 @@ class SC2ProcessManager(object):
 
     def step(self):
         # Step the game forward by a single step
-        request_step = sc_pb.RequestStep(count=128)
+        request_step = sc_pb.RequestStep(count=8)
         request = sc_pb.Request(step=request_step)
         self.websocket.send(request.SerializeToString())
         response_data = self.websocket.recv()

@@ -14,7 +14,7 @@ class SC2MiniMapScenario(object):
             low=-1,
             high=64,
             shape=(64, 64),
-            dtype=np.int
+            dtype=int
         )
 
     def get_marines(self):
