@@ -21,9 +21,9 @@ class qlearning(object):
         self.max_steps = 1000000
 
         # hyperparameters
-        self.learning_rate = 0.1
+        self.learning_rate = 0.000001
         self.discount_rate = 0.1
-        self.epsilon = .1
+        self.epsilon = .25
         #self.decay_rate = 0.001
         if saves is not None:
             self.qtable = saves[0]

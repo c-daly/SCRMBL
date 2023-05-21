@@ -13,7 +13,7 @@ class SC2MiniMapScenario(object):
         self.observation_space = Box(
             low=0,
             high=64,
-            shape=(2, 2),
+            shape=(64, 64),
             dtype=np.int
         )
 
@@ -99,7 +99,7 @@ class MoveToBeaconScenario(object):
         #        new_obs = ((unit.pos.x + .001)/8) * ((unit.pos.y + .001)/8)
         #        new_obs = [unit.pos.x, unit.pos.y]
         #        derived_obs.append(new_obs)
-        self.obs = (([marine.pos.x, marine.pos.y], [beacon.pos.x, beacon.pos.y]))
+        self.obs = (([int(marine.pos.x), int(marine.pos.y)], [int(beacon.pos.x), int(beacon.pos.y)]))
         return self.obs
 
 class DefeatRoachesScenario(object):

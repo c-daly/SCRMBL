@@ -15,7 +15,7 @@ import random
 class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, **kwargs):
         super().__init__()
-        self.scenario = MoveToBeaconScenario()
+        self.scenario = SC2MiniMapScenario()
         self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket, self.scenario)
         self.derived_obs = []
@@ -30,7 +30,7 @@ class SC2SyncEnv(BaseEnv):
         self.done = False
         self.info = None
         self.action_space = self.scenario.action_space #MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
-        self.map_high = 64
+        self.map_high = 128
         #self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         #self.observation_space = Box(
         #    low=-1,
@@ -169,6 +169,7 @@ class SC2SyncEnv(BaseEnv):
         return self.marines
 
     def step(self, action):
+        done = False
         #if len(self.obs.player_result) > 0:
         #    self.sc2_manager.create_game()
             #raise Exception("Game ended")
@@ -179,7 +180,6 @@ class SC2SyncEnv(BaseEnv):
         try:
             self.get_marines()
             self.take_action(action)
-            enemies_killed = max(9 - len(self.enemies), 0)
             # Step the game forward by a single step
 
         #    request_step = sc_pb.RequestStep(count=2)
@@ -191,7 +191,7 @@ class SC2SyncEnv(BaseEnv):
             if response.status != 3:
                 if response.status == 5:
                     self.sc2_manager.create_game()
-                    #self.done = True
+                    done = True
                     #self.reset()
             #self.reward = len(self.marines) - len(self.enemies) + enemies_killed
             #self.reward = (self.obs.observation.score.score_details.killed_value_units - self.last_kill_value)/(response.step.simulation_loop + 1) #- response.step.simulation_loop
@@ -203,11 +203,10 @@ class SC2SyncEnv(BaseEnv):
             #self.reward = np.log(max((len(self.marines) + enemies_killed)/max(len(self.enemies), 1), 1))
             #print(f"Reward: {self.reward}")
 
-
         except Exception as e:
             print(f"Step error: {e}")
             #self.restart_game()
-        return self.obs, self.reward, self.done, self.info
+        return self.obs, self.reward, done, self.info
     def render(self):
         pass
 
