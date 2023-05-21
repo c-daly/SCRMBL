@@ -1,3 +1,5 @@
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import tensorflow as tf
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Dense, Input
@@ -18,6 +20,7 @@ from contextlib import closing
 from time import sleep
 import websocket
 from websocket import create_connection
+import datetime
 
 class ReplayBuffer:
     def __init__(self, capacity):
@@ -127,6 +130,7 @@ class DQNAgent:
         # Create model
         model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
         model.compile(optimizer=Adam(lr=lr), loss='mse')
+        model.summary()
         return model
 
     def create_atari_model(self, lr):
@@ -138,19 +142,18 @@ class DQNAgent:
         model.add(Dense(512, activation='relu'))
         model.add(Dense(self.n_actions, activation='linear'))
         model.compile(optimizer=Adam(lr=lr), loss='mse')
+        model.summary()
         return model
 
     def act(self, state):
         if np.random.rand() < self.epsilon:
-            return np.random.choice(self.n_actions, size=(9,))
-
+            action = np.random.choice(self.n_actions, size=(9,))
+            return action
         q_values = self.model.predict(state)
         print(f"q value: {np.max(q_values[0])}")
         #return np.argmax(q_values[0]) % self.n_actions
-        #action = [np.argmax(value[0]) % 4 for value in q_values]
-        action = [np.argmax(np.max(marine, axis=1), axis=1) for marine in q_values]
+        action = [np.argmax(value[0]) % 4 for value in q_values]
         return action
-
     def train(self, replay_buffer, batch_size=10):
         #if len(replay_buffer) < batch_size:
         #    return
@@ -161,99 +164,66 @@ class DQNAgent:
             action = np.array(action)
             reward = np.array(reward)
             done = np.array(done)
-            print(f"action/reward: {action}/{reward}")
+            state = np.array(state)
+            next_state = np.array(state)
+            #print(f"action/reward: {action}/{reward}")
             #state = np.vstack(state)
             #state = state[np.newaxis, :]
             target = self.model.predict(state)
             target_next = self.model.predict(next_state)
 
             # Scale reward
-            reward_scaled = reward * 0.0001
+            #reward_scaled = reward * 0.0001
             reward_next_scaled = self.gamma * np.max(target_next, axis=1) * 0.0001
 
             # Indices where 'done' is False
-            not_done_indices = np.where(~done)[0]
-            done_indices = np.where(done)[0]
+            #not_done_indices = np.where(~done)[0]
+            #done_indices = np.where(done)[0]
             # For 'done' indices, set the target
             #target[done][action[done]] = reward_scaled[done]
 
             # For 'not done' indices, set the target
             #target[not_done_indices, 0, action[not_done_indices]] = reward_scaled[not_done_indices] + reward_next_scaled[not_done_indices]
-            if np.size(done_indices) > 0:
-                np.array(target)[done_indices][0][action[done_indices]] = np.array(reward_scaled)[done_indices]
-                [np.argmax(np.max(marine, axis=1), axis=1) for marine in target]
+            #if np.size(done_indices) > 0:
+            #    np.array(target)[0][done_indices][action[done_indices]] = np.array(reward_scaled)[done_indices]
+
             #target[~done][0][action[not_done_indices]] = reward_scaled[not_done_indices] + reward_next_scaled[not_done_indices]
-            np.array(target)[not_done_indices][0][action[not_done_indices]] = np.array(target)[not_done_indices][0][action[not_done_indices]]
-            #for idx in range(batch_size):
+            #np.array(target)[not_done_indices][0][action[not_done_indices]] =  np.array(target_next)[not_done_indices]
+            for idx in range(batch_size):
                 #if not isinstance(target[0], int):
                 #    target = target[0]
-            #    if idx >= len(target):
-            #        break
-            #    if done[idx]:
-            #        target[idx][action[idx]] = reward[idx] * .0001
-            #    else:
-            #        target_reward = (reward[idx] + self.gamma * np.max(target_next[idx])) * .0001
+                if idx >= len(target):
+                    break
+                if done[idx]:
+                    target[idx][action[idx]] = reward[idx] * .0001
+                else:
+                    target_reward = (reward[idx] + self.gamma * np.max(target_next[idx])) * .0001
                     #if not np.isscalar(target_reward):
                     #    target_reward = target_reward[0]
                     #if np.isscalar(target[0]):
                     #    target = [target]
                     #    if idx > 0:
                     #        break
-            #        target[idx][0][action[idx]] = target_reward
+                    target[idx][0][action[idx]] = target_reward
+
             #target[np.arange(batch_size), action] = reward + self.gamma * np.max(target_next, axis=1)
             #target[done, action[done]] = reward[done]
-
-            self.model.fit(state, target, epochs=1, verbose=0)
+            #log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+            #tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+            self.model.fit(state, target, epochs=1, verbose=0) #, callbacks=[tensorboard_callback])
         except Exception as e:
             print(f"error: {e}")
-#def main():
-#    env = gym.make("CartPole-v1")
-#    n_games = 400
-#    batch_size = 64
-#    replay_buffer = ReplayBuffer(capacity=5000)
-#
-#    agent = DQNAgent(env.observation_space.shape, env.action_space.n)
-#
-#    for i in range(n_games):
-#        state = env.reset()
-#        state = preprocess(state)
-#        state_stack = np.stack([state] * 4, axis=2)
-#        #state = np.reshape(state, [1, agent.state_shape[0]])
-#        total_reward = 0
-#
-#        while True:
-#            action = agent.act(state)
-#            next_state, reward, done, _ = env.step(action)
-#            env.render()
-#            next_state = np.reshape(next_state, [1, agent.state_shape[0]])
-#
-#            replay_buffer.push(state, action, reward, next_state, done)
-#            state = next_state
-#            total_reward += reward
-#
-#            if done:
-#                break
-#
-#            agent.train(replay_buffer, batch_size)
-#
-#        if i % 10 == 0:
-#            print(f"Episode: {i}, Reward: {total_reward}")
-#
-#        # Epsilon decay
-#        if agent.epsilon > 0.01:
-#            agent.epsilon *= 0.995
-#
-
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
+    tf.get_logger().setLevel('ERROR')
     checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/raw_agent_runner/ppo",
                                              name_prefix="rl_model")
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
     actions_n = 0
-    n_games = 400
-    batch_size = 64
-    replay_buffer = ReplayBuffer(capacity=500)
+    n_games = 10000
+    batch_size = 50
+    replay_buffer = ReplayBuffer(capacity=1000)
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
@@ -270,11 +240,10 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
         while True:
             action = agent.act(state[np.newaxis, :])  # Reshape to (1, 84, 84, 4)
             next_state, reward, done, _ = env.step([action])
-            print(f"action/reward: {action}/{reward}")
-            #next_state = np.append(state[:, :, 1:], np.expand_dims(next_state, 2), axis=2)
+            #print(f"action/reward: {action}/{reward}")
             next_state = next_state.reshape(next_state.shape[1:])
             replay_buffer.push(state, action, reward, next_state, done)
-            state_stack = next_state
+            state = next_state
             total_reward += reward
 
             if done:
@@ -288,12 +257,3 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
         # Epsilon decay
         if agent.epsilon > 0.01:
             agent.epsilon *= 0.995
-
-    #env.reset()
-    while True:
-        try:
-            model.learn(total_timesteps=100000, callback=[eval_callback, checkpoint_callback])
-        except Exception as e:
-            env.reset()
-            continue
-

@@ -345,4 +345,4 @@ class SC2SyncEnv(BaseEnv):
                 for result in response.action.result:
                     print(f"Action Result: {result}")
         except Exception as e:
-            print(f"take action error {e}")
+             print(f"take action error {e}")

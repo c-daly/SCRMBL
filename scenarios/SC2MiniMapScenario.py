@@ -11,7 +11,7 @@ class SC2MiniMapScenario(object):
         self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         self.derived_obs = None
         self.observation_space = Box(
-            low=0,
+            low=-1,
             high=64,
             shape=(64, 64),
             dtype=np.int
