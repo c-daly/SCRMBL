@@ -3,22 +3,8 @@ from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Dense, Input
 from tensorflow.keras.optimizers import Adam
 import numpy as np
-import gym
-from skimage.color import rgb2gray
-from skimage.transform import resize
 from tensorflow.keras.layers import Conv2D, Flatten
 from numpy import random
-from stable_baselines3.common.monitor import Monitor
-from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
-from envs.SC2SyncEnv import SC2SyncEnv
-from stable_baselines3.common.vec_env import DummyVecEnv
-from stable_baselines3 import A2C, PPO
-from absl import flags
-from contextlib import closing
-from time import sleep
-import websocket
-from websocket import create_connection
-import datetime
 
 class ReplayBuffer:
     def __init__(self, capacity):
@@ -47,8 +33,6 @@ class DQNAgent:
         self.state_shape = state_space
         self.action_space = action_space
         self.n_actions = action_space
-        #if not isinstance(gym.spaces.multi_discrete.MultiDiscrete, action_space):
-        #    self.action_space.n
         self.epsilon = epsilon
         self.gamma = gamma
         self.model = self.create_model(lr)
@@ -91,7 +75,6 @@ class DQNAgent:
             return action
         q_values = self.model.predict(state)
         print(f"q value: {np.max(q_values[0])}")
-        #return np.argmax(q_values[0]) % self.n_actions
         action = [np.argmax(value[0]) % 4 for value in q_values]
         return action
     def train(self, replay_buffer, batch_size=10):
@@ -106,51 +89,18 @@ class DQNAgent:
             done = np.array(done)
             state = np.array(state)
             next_state = np.array(state)
-            #print(f"action/reward: {action}/{reward}")
-            #state = np.vstack(state)
-            #state = state[np.newaxis, :]
             target = self.model.predict(state)
             target_next = self.model.predict(next_state)
 
-            # Scale reward
-            #reward_scaled = reward * 0.0001
-            reward_next_scaled = self.gamma * np.max(target_next, axis=1) * 0.0001
-
-            # Indices where 'done' is False
-            #not_done_indices = np.where(~done)[0]
-            #done_indices = np.where(done)[0]
-            # For 'done' indices, set the target
-            #target[done][action[done]] = reward_scaled[done]
-
-            # For 'not done' indices, set the target
-            #target[not_done_indices, 0, action[not_done_indices]] = reward_scaled[not_done_indices] + reward_next_scaled[not_done_indices]
-            #if np.size(done_indices) > 0:
-            #    np.array(target)[0][done_indices][action[done_indices]] = np.array(reward_scaled)[done_indices]
-
-            #target[~done][0][action[not_done_indices]] = reward_scaled[not_done_indices] + reward_next_scaled[not_done_indices]
-            #np.array(target)[not_done_indices][0][action[not_done_indices]] =  np.array(target_next)[not_done_indices]
             for idx in range(self.batch_size):
-                #if not isinstance(target[0], int):
-                #    target = target[0]
                 if idx >= len(target):
                     break
                 if done[idx]:
                     target[idx][action[idx]] = reward[idx] * .0001
                 else:
                     target_reward = (reward[idx] + self.gamma * np.max(target_next[idx])) * .0001
-                    #if not np.isscalar(target_reward):
-                    #    target_reward = target_reward[0]
-                    #if np.isscalar(target[0]):
-                    #    target = [target]
-                    #    if idx > 0:
-                    #        break
                     target[idx][0][action[idx]] = target_reward
-
-            #target[np.arange(batch_size), action] = reward + self.gamma * np.max(target_next, axis=1)
-            #target[done, action[done]] = reward[done]
-            #log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-            #tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-            self.model.fit(state, target, epochs=1, verbose=0) #, callbacks=[tensorboard_callback])
+            self.model.fit(state, target, epochs=1, verbose=0)
         except Exception as e:
             print(f"error: {e}")
 
