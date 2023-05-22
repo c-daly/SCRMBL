@@ -216,7 +216,7 @@ class DQNAgent:
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     tf.get_logger().setLevel('ERROR')
-    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/raw_agent_runner/ppo",
+    checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="../logs/raw_agent_runner/ppo",
                                              name_prefix="rl_model")
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])

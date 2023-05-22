@@ -22,10 +22,10 @@ model = PPO('CnnPolicy', env=env, learning_rate=0.01, gamma=0.99, verbose=1)
 
 name_prefix = "atari_model"
 env = DummyVecEnv([lambda: Monitor(env)])
-checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/raw_agent_runner/ppo",
-                                             name_prefix="rl_model")
-eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/ppo_atari/",
-                             log_path="./logs/raw_agent_runner/ppo/", eval_freq=1000,
+checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="../logs/raw_agent_runner/ppo",
+                                         name_prefix="rl_model")
+eval_callback = EvalCallback(env, best_model_save_path="../logs/raw_agent_runner/ppo_atari/",
+                             log_path="../logs/raw_agent_runner/ppo/", eval_freq=1000,
                              deterministic=True, render=False)
 
 # env.reset()

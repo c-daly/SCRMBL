@@ -22,8 +22,8 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     env = SC2SyncEnv(websocket)
     env = DummyVecEnv([lambda: Monitor(env)])
     eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/qlearn/",
-                                 log_path="./logs/raw_agent_runner/ppo/", eval_freq=64,
-                                 deterministic=True, render=False,)
+                                 log_path="../logs/raw_agent_runner/ppo/", eval_freq=64,
+                                 deterministic=True, render=False, )
 
     #model = PPO('MlpPolicy', env=env, learning_rate=0.0001, gamma=0.9, verbose=1)
     #model = A2C.load("a2c_sc2_dbz")

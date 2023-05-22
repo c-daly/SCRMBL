@@ -36,7 +36,7 @@ class DQNAgent:
         self.epsilon = epsilon
         self.gamma = gamma
         self.model = self.create_model(lr)
-        self.replay_buffer = ReplayBuffer(capacity=50)
+        self.replay_buffer = ReplayBuffer(capacity=500)
         self.env = env
 
     def create_model(self, lr):
@@ -120,12 +120,10 @@ class DQNAgent:
                 total_reward += reward
 
                 if done:
+                    print(f"Episode: {i}, Reward: {total_reward}")
                     break
 
                 self.train(self.replay_buffer, self.batch_size)
-
-            if i % 10 == 0:
-                print(f"Episode: {i}, Reward: {total_reward}")
 
             # Epsilon decay
             if self.epsilon > 0.01:
