@@ -1,11 +1,49 @@
 import gym
+import tensorflow as tf
+from tensorflow.keras import Model, Sequential
+from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.optimizers import Adam
 import numpy as np
 from gym.spaces import MultiDiscrete, Box, Discrete
 
+
+def create_model_with_multidiscrete_output(input_shape, value_max, num_values, lr=0.0001):
+    # Input layer
+    input_layer = Input(shape=input_shape)
+
+    # Hidden layers
+    hidden_layer1 = Dense(64, activation='relu')(input_layer)
+    hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
+
+    # Output layers
+    output_layers = [Dense(value_max, activation='linear')(hidden_layer2) for _ in range(num_values)]
+
+    # Create model
+    model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
+    model.compile(optimizer=Adam(lr=lr), loss='mse')
+    model.summary()
+    return model
+
+def create_standard_model(input_shape, n_outputs, lr=0.003):
+    # Input layer
+    input_layer = Input(shape=input_shape)
+
+    # Hidden layers
+    hidden_layer1 = Dense(64, activation='relu')(input_layer)
+    hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
+
+    # Output layers
+    output_layers = Dense(n_outputs, activation='linear')(hidden_layer2)
+
+    # Create model
+    model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
+    model.compile(optimizer=Adam(lr=lr), loss='mse')
+    model.summary()
+    return model
 class SC2MiniMapScenario(object):
     def __init__(self):
         self.marines = None
-        self.map_name = "DefeatZerglingsAndBanelings.SC2Map"
+        self.map_name = MoveToBeaconScenario()
         self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
         self.map_high = 64
         self.map = np.zeros((self.map_high, self.map_high), dtype=int)
@@ -16,6 +54,7 @@ class SC2MiniMapScenario(object):
             shape=(64, 64),
             dtype=int
         )
+        self.model = create_model_with_multidiscrete_output(self.observation_space.shape, 4, 9)
 
     def get_marines(self):
         self.marines = [unit for unit in self.raw_obs.observation.raw_data.units if unit.alliance == 1]
@@ -63,8 +102,9 @@ class MoveToBeaconScenario(object):
             low=0,
             high=64,
             shape=(2, 2),
-            dtype=np.int
+            dtype=int
         )
+        self.model = create_standard_model(self.observation_space.shape, 4)
 
     def get_marines(self):
         self.marines = [unit for unit in self.raw_obs.observation.raw_data.units if unit.alliance == 1]

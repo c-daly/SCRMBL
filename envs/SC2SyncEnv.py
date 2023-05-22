@@ -12,10 +12,12 @@ from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenari
 
 import random
 
+
+
 class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, **kwargs):
         super().__init__()
-        self.scenario = SC2MiniMapScenario()
+        self.scenario = MoveToBeaconScenario()
         self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket, self.scenario)
         self.derived_obs = []

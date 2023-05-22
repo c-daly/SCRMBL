@@ -35,10 +35,12 @@ class DQNAgent:
         self.n_actions = action_space
         self.epsilon = epsilon
         self.gamma = gamma
-        self.model = self.create_model(lr)
         self.replay_buffer = ReplayBuffer(capacity=500)
         self.env = env
-
+        if self.env.scenario.model is not None:
+            self.model = env.scenario.model
+        else:
+            self.model = env.create_model(0.0001)
     def create_model(self, lr):
 
         # Input layer
@@ -96,7 +98,7 @@ class DQNAgent:
                 if idx >= len(target):
                     break
                 if done[idx]:
-                    target[idx][action[idx]] = reward[idx] * .0001
+                    target[idx][action[idx]] = reward[idx]
                 else:
                     target_reward = (reward[idx] + self.gamma * np.max(target_next[idx])) * .0001
                     target[idx][0][action[idx]] = target_reward
@@ -111,7 +113,8 @@ class DQNAgent:
             total_reward = 0
 
             while True:
-                action = self.act(state[np.newaxis, :])  # Reshape to (1, 84, 84, 4)
+                #action = self.act(state[np.newaxis, :])  # Reshape to (1, 84, 84, 4)
+                action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 # print(f"action/reward: {action}/{reward}")
                 next_state = next_state.reshape(next_state.shape[1:])
