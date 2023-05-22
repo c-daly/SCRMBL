@@ -10,9 +10,11 @@ from time import sleep
 import websocket
 import gym
 from websocket import create_connection
+from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    env = SC2SyncEnv(websocket)
+    scenario = SC2MiniMapScenario()
+    env = SC2SyncEnv(websocket, scenario)
     actions_n = 0
     n_games = 10000
     batch_size = 250

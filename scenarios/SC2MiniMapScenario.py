@@ -43,7 +43,7 @@ def create_standard_model(input_shape, n_outputs, lr=0.003):
 class SC2MiniMapScenario(object):
     def __init__(self):
         self.marines = None
-        self.map_name = MoveToBeaconScenario()
+        self.map_name = "DefeatZerglingsAndBanelings.SC2Map"
         self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
         self.map_high = 64
         self.map = np.zeros((self.map_high, self.map_high), dtype=int)

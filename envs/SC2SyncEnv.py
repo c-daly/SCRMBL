@@ -15,9 +15,11 @@ import random
 
 
 class SC2SyncEnv(BaseEnv):
-    def __init__(self, websocket, **kwargs):
+    def __init__(self, websocket, scenario=None, **kwargs):
         super().__init__()
-        self.scenario = MoveToBeaconScenario()
+        self.scenario = scenario
+        if scenario is None:
+            self.scenario = MoveToBeaconScenario()
         self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket, self.scenario)
         self.derived_obs = []
