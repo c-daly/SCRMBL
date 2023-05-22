@@ -19,7 +19,7 @@ class ReplayBuffer:
         self.size = min(self.size + 1, self.capacity)
 
     def sample(self, batch_size):
-        indices = np.random.choice(self.size, size=self.batch_size, replace=False)
+        indices = np.random.choice(self.size, size=batch_size, replace=False)
         state, action, reward, next_state, done = zip(*self.buffer[indices])
 
         return (np.array(state, dtype=np.float32),
@@ -35,7 +35,7 @@ class DQNAgent:
         self.n_actions = action_space
         self.epsilon = epsilon
         self.gamma = gamma
-        self.replay_buffer = ReplayBuffer(capacity=500)
+        self.replay_buffer = ReplayBuffer(capacity=1500)
         self.env = env
         if self.env.scenario.model is not None:
             self.model = env.scenario.model
@@ -117,7 +117,7 @@ class DQNAgent:
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 # print(f"action/reward: {action}/{reward}")
-                next_state = next_state.reshape(next_state.shape[1:])
+                #next_state = next_state.reshape(next_state.shape[1:])
                 self.replay_buffer.push(state, action, reward, next_state, done)
                 state = next_state
                 total_reward += reward

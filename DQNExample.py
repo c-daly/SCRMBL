@@ -14,10 +14,10 @@ from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenari
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = SC2MiniMapScenario()
-    env = SC2SyncEnv(websocket, scenario)
+    env = SC2SyncEnv(websocket, scenario, 8)
     actions_n = 0
     n_games = 10000
-    batch_size = 250
+    batch_size = 50
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
@@ -28,7 +28,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
 
     while True:
         try:
-            model.learn(batch_size=5, n_games=1000)
+            model.learn(batch_size=batch_size, n_games=1000)
         except Exception as e:
             env.reset()
             continue

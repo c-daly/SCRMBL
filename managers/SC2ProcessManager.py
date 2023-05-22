@@ -2,9 +2,10 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 class SC2ProcessManager(object):
-    def __init__(self, websocket, scenario):
+    def __init__(self, websocket, scenario, step_multiplier=32):
         self.websocket = websocket
         self.scenario = scenario
+        self.step_multiplier = step_multiplier
 
     def create_game(self):
         response = None
@@ -66,7 +67,7 @@ class SC2ProcessManager(object):
 
     def step(self):
         # Step the game forward by a single step
-        request_step = sc_pb.RequestStep(count=8)
+        request_step = sc_pb.RequestStep(count=self.step_multiplier)
         request = sc_pb.Request(step=request_step)
         self.websocket.send(request.SerializeToString())
         response_data = self.websocket.recv()
