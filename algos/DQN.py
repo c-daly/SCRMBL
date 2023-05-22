@@ -1,3 +1,4 @@
+import gym
 import tensorflow as tf
 from tensorflow.keras import Model, Sequential
 from tensorflow.keras.layers import Dense, Input
@@ -29,7 +30,7 @@ class ReplayBuffer:
                 np.array(done, dtype=np.bool))
 
 class DQNAgent:
-    def __init__(self, state_space, action_space, env, epsilon=0.9, gamma=0.95, lr=1e-3):
+    def __init__(self, state_space, action_space, env, epsilon=0.9, gamma=0.95, lr=1e-3, act_shape=(1,)):
         self.state_shape = state_space
         self.action_space = action_space
         self.n_actions = action_space
@@ -37,6 +38,7 @@ class DQNAgent:
         self.gamma = gamma
         self.replay_buffer = ReplayBuffer(capacity=1500)
         self.env = env
+        self.act_shape = act_shape
         if self.env.scenario.model is not None:
             self.model = env.scenario.model
         else:
@@ -71,9 +73,9 @@ class DQNAgent:
         model.summary()
         return model
 
-    def act(self, state):
+    def act(self, state, act_shape=(9,)):
         if np.random.rand() < self.epsilon:
-            action = np.random.choice(self.n_actions, size=(9,))
+            action = np.random.choice(self.n_actions, size=self.act_shape)
             return action
         q_values = self.model.predict(state)
         print(f"q value: {np.max(q_values[0])}")
@@ -101,7 +103,10 @@ class DQNAgent:
                     target[idx][action[idx]] = reward[idx]
                 else:
                     target_reward = (reward[idx] + self.gamma * np.max(target_next[idx])) * .0001
-                    target[idx][0][action[idx]] = target_reward
+                    if self.act_shape == (1,):
+                        target[idx][action[idx]] = target_reward
+                    else:
+                        target[idx][0][action[idx]] = target_reward
             self.model.fit(state, target, epochs=1, verbose=0)
         except Exception as e:
             print(f"error: {e}")

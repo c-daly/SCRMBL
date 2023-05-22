@@ -1,7 +1,7 @@
 import gym
 import tensorflow as tf
 from tensorflow.keras import Model, Sequential
-from tensorflow.keras.layers import Dense, Input
+from tensorflow.keras.layers import Dense, Input, Flatten
 from tensorflow.keras.optimizers import Adam
 import numpy as np
 from gym.spaces import MultiDiscrete, Box, Discrete
@@ -26,17 +26,24 @@ def create_model_with_multidiscrete_output(input_shape, value_max, num_values, l
 
 def create_standard_model(input_shape, n_outputs, lr=0.003):
     # Input layer
-    input_layer = Input(shape=input_shape)
+    #input_layer = Input(shape=input_shape)
 
     # Hidden layers
-    hidden_layer1 = Dense(64, activation='relu')(input_layer)
-    hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
+    #hidden_layer1 = Dense(64, activation='relu')(input_layer)
+    #hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
 
     # Output layers
-    output_layers = Dense(n_outputs, activation='linear')(hidden_layer2)
+    #output_layers = [Dense(n_outputs, activation='linear')(hidden_layer2)]
 
     # Create model
-    model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
+    #model = tf.keras.Model(inputs=input_layer, outputs=output_layers)
+    #model.compile(optimizer=Adam(lr=lr), loss='mse')
+    #model.summary()
+
+    model = Sequential()
+    model.add(Flatten(input_shape=(2, 2)))
+    model.add(Dense(32, activation='relu'))
+    model.add(Dense(4))
     model.compile(optimizer=Adam(lr=lr), loss='mse')
     model.summary()
     return model

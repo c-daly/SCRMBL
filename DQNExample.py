@@ -24,7 +24,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     else:
         actions_n = env.action_space.n
 
-    model = DQNAgent(env.observation_space.shape, actions_n, env)
+    model = DQNAgent(env.observation_space.shape, actions_n, env, act_shape=(9,))
 
     while True:
         try:
