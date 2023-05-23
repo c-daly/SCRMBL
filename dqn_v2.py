@@ -19,8 +19,8 @@ class DQNetwork:
             decay_rate=0.05)
         self.model = Sequential()
         self.model.add(Input(shape=(1,4096)))
-        self.model.add(Dense(64, activation='relu'))
-        self.model.add(Dense(64, activation='relu'))
+        self.model.add(Dense(256, activation='relu'))
+        self.model.add(Dense(128, activation='relu'))
         self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(36, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam())
@@ -122,7 +122,7 @@ class DQNAgent:
                     episode_mean = total_reward/steps
                     running_episode_mean += episode_mean
                     print(f"Ep: {ep}, reward: {reward}, ep mean {episode_mean}, running mean: {running_reward_tally/total_steps} ")
-                    print(f"average per episode: {running_episode_mean/(ep + 1)}")
+                    print(f"total steps: {total_steps}")
                     #i = 0
                     ep += 1
                     break
@@ -130,11 +130,11 @@ class DQNAgent:
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = SC2MiniMapScenario()
-    env = SC2SyncEnv(websocket, scenario, 1)
+    env = SC2SyncEnv(websocket, scenario, 64)
     actions_n = 0
     n_games = 10000
-    batch_size = 250
-    capacity = 1000
+    batch_size = 9000
+    capacity = 10000
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
