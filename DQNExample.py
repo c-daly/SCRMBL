@@ -13,7 +13,7 @@ from websocket import create_connection
 from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    scenario = SC2MiniMapScenario()
+    scenario = MoveToBeaconScenario()
     env = SC2SyncEnv(websocket, scenario, 8)
     actions_n = 0
     n_games = 10000
@@ -24,7 +24,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     else:
         actions_n = env.action_space.n
 
-    model = DQNAgent(env.observation_space.shape, actions_n, env, act_shape=(9,))
+    model = DQNAgent(env.observation_space.shape, actions_n, env, act_shape=(1,))
 
     while True:
         try:

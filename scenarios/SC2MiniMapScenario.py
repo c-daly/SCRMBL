@@ -41,7 +41,7 @@ def create_standard_model(input_shape, n_outputs, lr=0.003):
     #model.summary()
 
     model = Sequential()
-    model.add(Flatten(input_shape=(2, 2)))
+    model.add(Input(shape=input_shape))
     model.add(Dense(32, activation='relu'))
     model.add(Dense(4))
     model.compile(optimizer=Adam(lr=lr), loss='mse')
@@ -111,7 +111,7 @@ class MoveToBeaconScenario(object):
             shape=(2, 2),
             dtype=int
         )
-        self.model = create_standard_model(self.observation_space.shape, 4)
+        self.model = create_standard_model(input_shape=self.observation_space.shape, n_outputs=4)
 
     def get_marines(self):
         self.marines = [unit for unit in self.raw_obs.observation.raw_data.units if unit.alliance == 1]

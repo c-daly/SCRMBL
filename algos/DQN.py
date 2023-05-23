@@ -107,6 +107,7 @@ class DQNAgent:
                         target[idx][action[idx]] = target_reward
                     else:
                         target[idx][0][action[idx]] = target_reward
+            #target = (reward + self.gamma * np.max(target_next)) * .0001
             self.model.fit(state, target, epochs=1, verbose=0)
         except Exception as e:
             print(f"error: {e}")

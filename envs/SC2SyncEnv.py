@@ -66,10 +66,9 @@ class SC2SyncEnv(BaseEnv):
             response = self.sc2_manager.step()
 
             if response.status != 3:
-                if response.status == 5:
-                    self.sc2_manager.create_game()
-                    done = True
-                    #self.reset()
+                done = True
+                self.sc2_manager.create_game()
+                #self.reset()
 
             self.reward = self.scenario.raw_obs.observation.score.score # - self.last_reward
 
