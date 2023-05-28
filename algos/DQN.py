@@ -47,7 +47,12 @@ class DQNAgent:
         self.obs_space = obs_space
         self.obs_space_flat_dim = np.prod(obs_space.shape)
         self.action_space = action_space
-        self.action_space_flat_dim = np.prod(action_space.shape) * action_space.nvec[0]
+
+        if isinstance(env.action_space, gym.spaces.MultiDiscrete):
+            self.action_space_flat_dim = np.prod(action_space.shape) * action_space.nvec[0]
+        else:
+            self.action_space_flat_dim = env.action_space.n
+
         self.network = DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
         self.memory = ReplayMemory(capacity)
         self.gamma = 0.99  # Discount factor
@@ -61,10 +66,24 @@ class DQNAgent:
         self.memory.push(state, action, reward, next_state, done)
 
     def act(self, state):
+
+        if isinstance(self.env.action_space, gym.spaces.MultiDiscrete):
+            #size = (self.env.action_space.nvec[0], self.action_space_flat_dim)
+            size = (1, self.action_space.shape[0], self.action_space.nvec[0])
+        else:
+            size = (1, self.action_space_flat_dim)
+
         if np.random.rand() <= self.epsilon:
             return np.random.choice(4, size=(self.action_space_flat_dim,))
         net_result = self.network.model.predict(state, verbose=0)
-        action = np.argmax(net_result.reshape(self.action_space.shape[0],self.action_space.nvec[0]), axis=1)
+        #action = np.argmax(net_result.reshape(size, axis=1))
+        action = net_result.reshape(size)
+        #action = np.amax(action[0], axis=1)
+
+        if isinstance(self.env.action_space, gym.spaces.MultiDiscrete):
+            action = np.argmax(action[0], axis=1)
+        else:
+            action = np.argmax(action)
         return action
 
     def replay(self):
@@ -73,9 +92,9 @@ class DQNAgent:
 
         result = self.memory.sample(self.batch_size)
         state = np.array([a[0] for a in result])
-        state = state.reshape(self.batch_size, 1, 4096)
+        state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         next_state = np.array([a[3] for a in result])
-        next_state = next_state.reshape(self.batch_size, 1, 4096)
+        next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         done = [a[4] for a in result]
         done_ints = np.zeros(np.shape(done))
         reward = [a[2] for a in result]
@@ -108,7 +127,7 @@ class DQNAgent:
         total_ep_means = 0
         for ep in range(episodes):
             state = self.env.reset()
-            state = np.reshape(state, [1, 4096])
+            state = np.reshape(state, [1, self.obs_space_flat_dim])
             done = False
             total_reward = 0
             steps = 0
@@ -117,7 +136,7 @@ class DQNAgent:
             #for i in range(steps_per_ep):
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
-                next_state = np.reshape(next_state, [1, 4096])
+                next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
                 self.remember(state, action, reward, next_state, done)
                 state = next_state
                 total_reward += reward

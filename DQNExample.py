@@ -2,7 +2,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from envs.SC2SyncEnv import SC2SyncEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
-from algos.DQNv0 import DQNAgent
+from algos.DQN import DQNAgent
 from stable_baselines3 import A2C, PPO
 from absl import flags
 from contextlib import closing
@@ -17,18 +17,27 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     env = SC2SyncEnv(websocket, scenario, 8)
     actions_n = 0
     n_games = 10000
-    batch_size = 50
+    batch_size = 64
+    capacity = 128
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
     else:
         actions_n = env.action_space.n
 
-    model = DQNAgent(env.observation_space.shape, actions_n, env, act_shape=(1,))
-
+    model = DQNAgent(env, env.observation_space, env.action_space, batch_size, capacity)
+    #model.network.model = scenario.model
+    scenario.model = model.network
+    start_step = 0
+    running_reward = 0
+    num_episodes = 100
+    ep = 0
     while True:
         try:
-            model.learn(batch_size=batch_size, n_games=1000)
+            start_step, running_reward = model.train(num_episodes, start_step, running_reward)
+            ep += num_episodes
+            model.network.model.save("dqn.h5")
         except Exception as e:
             env.reset()
             continue
+    print(f"Eps: {ep}, Steps: {start_step}")

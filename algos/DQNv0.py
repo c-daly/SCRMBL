@@ -29,7 +29,7 @@ class ReplayBuffer:
                 np.array(next_state, dtype=np.float32),
                 np.array(done, dtype=np.bool))
 
-class DQNAgent:
+class DQNAgentv0:
     def __init__(self, state_space, action_space, env, epsilon=0.9, gamma=0.95, lr=1e-3, act_shape=(1,)):
         self.state_shape = state_space
         self.action_space = action_space

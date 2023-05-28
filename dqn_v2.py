@@ -16,7 +16,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = SC2MiniMapScenario()
     #scenario.model = keras.models.load_model("dqn.h5")
 
-    env = SC2SyncEnv(websocket, scenario, 1)
+    env = SC2SyncEnv(websocket, scenario, 8)
     actions_n = 0
     n_games = 10000
     batch_size = 128

@@ -61,7 +61,7 @@ class SC2MiniMapScenario(object):
             shape=(64, 64),
             dtype=int
         )
-        self.model = create_model_with_multidiscrete_output(self.observation_space.shape, 4, 9)
+        #self.model = create_model_with_multidiscrete_output(self.observation_space.shape, 4, 9)
 
     def get_marines(self):
         self.marines = [unit for unit in self.raw_obs.observation.raw_data.units if unit.alliance == 1]
