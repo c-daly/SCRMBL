@@ -10,7 +10,8 @@ class SC2SyncEnv(BaseEnv):
     def __init__(self, websocket, scenario=None, step_multiplier=16, **kwargs):
         super().__init__()
         self.scenario = scenario
-        self.default_move_speed = 4
+        self.step_multiplier = step_multiplier
+        self.default_move_speed = 2
         if scenario is None:
             self.scenario = MoveToBeaconScenario()
         self.last_kill_value = 0
@@ -70,7 +71,11 @@ class SC2SyncEnv(BaseEnv):
                 self.sc2_manager.create_game()
                 #self.reset()
 
-            self.reward = self.scenario.raw_obs.observation.score.score # - self.last_reward
+            self.reward = self.scenario.raw_obs.observation.score.score
+            #step = self.scenario.raw_obs.observation.game_loop/self.step_multiplier
+            #if step == 0:
+            #    step = 1
+            #self.reward = self.scenario.raw_obs.observation.score.score * 1/step
 
         except Exception as e:
             print(f"Step error: {e}")
@@ -104,7 +109,7 @@ class SC2SyncEnv(BaseEnv):
                     else:
                         raise Exception("Invalid action")
                     #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-                    actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(self.marines[i], action[i])))
+                    actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(self.marines[i], action[i], self.default_move_speed)))
 
                 else:
                     actions_pb.append(raw_pb.ActionRaw(unit_command=Actions.random_attack(self.marines[i], 64, 64)))

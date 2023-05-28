@@ -2,7 +2,7 @@ from stable_baselines3.common.monitor import Monitor
 from stable_baselines3.common.callbacks import CheckpointCallback, EvalCallback
 from envs.SC2SyncEnv import SC2SyncEnv
 from stable_baselines3.common.vec_env import DummyVecEnv
-from algos.DQN import DQNAgent
+from algos.DQNv0 import DQNAgent
 from stable_baselines3 import A2C, PPO
 from absl import flags
 from contextlib import closing
