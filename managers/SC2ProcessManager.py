@@ -7,6 +7,18 @@ class SC2ProcessManager(object):
         self.scenario = scenario
         self.step_multiplier = step_multiplier
 
+    def get_interface_options(self):
+        interface = sc_pb.InterfaceOptions(
+            raw=True,
+            score=True,
+            feature_layer=sc_pb.SpatialCameraSetup(width=64)
+        )
+        interface.render.minimap_resolution.x = 64
+        interface.render.minimap_resolution.y = 64
+        interface.render.resolution.x = 1024
+        interface.render.resolution.y = 768
+        return interface
+
     def create_game(self):
         response = None
         create_game = sc_pb.RequestCreateGame(
@@ -36,16 +48,16 @@ class SC2ProcessManager(object):
         # Join the game
         join_game = sc_pb.RequestJoinGame(
             race=common_pb.Terran,
-            options=sc_pb.InterfaceOptions(
-                raw=True,
-                score=True,
-                feature_layer=sc_pb.SpatialCameraSetup(
-                    width=64,
+            #options=sc_pb.InterfaceOptions(
+            #    raw=True,
+            #    score=True,
+            #    feature_layer=sc_pb.SpatialCameraSetup(
+            #        width=64,
 
-                ),
-                render=sc_pb.SpatialCameraSetup(width=64,),
+            #    ),
+            options=self.get_interface_options(),
+
             )
-        )
         request = sc_pb.Request(join_game=join_game)
         try:
             self.websocket.send(request.SerializeToString())

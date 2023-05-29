@@ -77,7 +77,7 @@ class DQNAgent:
         if np.random.rand() <= self.epsilon:
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 return random_choice
-            return np.random.choice(4, size=(self.action_space_flat_dim,))
+            return np.random.choice(self.action_space.nvec[0], size=(len(self.action_space.nvec)))
         net_result = self.network.model.predict(state, verbose=0)
         #action = np.argmax(net_result.reshape(size, axis=1))
         action = net_result.reshape(size)

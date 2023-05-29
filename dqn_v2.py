@@ -14,7 +14,7 @@ from algos.DQN import DQNAgent
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = SC2MiniMapScenario()
-    #scenario.model = keras.models.load_model("dqn.h5")
+    #scenario.model = keras.models.load_model("dzb.dqn.h5")
 
     env = SC2SyncEnv(websocket, scenario, 8)
     actions_n = 0
@@ -38,7 +38,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
         try:
             start_step, running_reward = model.train(num_episodes, start_step, running_reward)
             ep += num_episodes
-            model.network.model.save("dqn.h5")
+            model.network.model.save("dzb.dqn.h5")
         except Exception as e:
             env.reset()
             continue
