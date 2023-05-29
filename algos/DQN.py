@@ -1,7 +1,7 @@
 import numpy as np
 import random
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Input
+from tensorflow.keras.layers import Dense, Flatten, Input, Conv2D
 from tensorflow.keras.optimizers import Adam, schedules
 from tensorflow import keras
 from collections import deque
@@ -16,13 +16,35 @@ class DQNetwork:
     def __init__(self, obs_space, action_space):
         lr_schedule = schedules.ExponentialDecay(
             initial_learning_rate=.01,
-            decay_steps=7500,
-            decay_rate=0.95)
+            decay_steps=50,
+            decay_rate=0.5)
         self.model = Sequential()
         self.model.add(Input(shape=(1,obs_space)))
         #self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(action_space, activation='linear'))
+        self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
+
+class ConvDQNetwork:
+    def __init__(self, obs_space, action_space):
+        # Network defined by the Deepmind paper
+        lr_schedule = schedules.ExponentialDecay(
+            initial_learning_rate=.01,
+            decay_steps=50,
+            decay_rate=0.5)
+
+        self.model = Sequential()
+        self.model.add(Input(shape=(1, 64, 64, 3)))
+
+        # Convolutions on the frames on the screen
+        self.model.add(Conv2D(32, 8, strides=4, activation="relu"))
+        self.model.add(Conv2D(64, 4, strides=2, activation="relu"))
+        self.model.add(Conv2D(64, 3, strides=1, activation="relu"))
+
+        self.model.add(Flatten())
+
+        self.model.add(Dense(512, activation="relu"))
+        self.model.add(Dense(action_space, activation="linear"))
         self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
 
 # Define Replay Memory
@@ -53,14 +75,22 @@ class DQNAgent:
         else:
             self.action_space_flat_dim = env.action_space.n
 
-        self.network = DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
         self.memory = ReplayMemory(capacity)
         self.gamma = 0.99  # Discount factor
         self.epsilon = 1.0  # Exploration
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.995
+        self.epsilon_decay = 0.95
         self.batch_size = batch_size
         self.capacity = capacity
+
+        #self.network = self.build_standard_network()
+        self.network = self.build_convolutional_network()
+
+    def build_standard_network(self):
+        return DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
+
+    def build_convolutional_network(self):
+        return ConvDQNetwork(self.obs_space, self.action_space_flat_dim)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
@@ -95,9 +125,9 @@ class DQNAgent:
 
         result = self.memory.sample(self.batch_size)
         state = np.array([a[0] for a in result])
-        state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        #state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         next_state = np.array([a[3] for a in result])
-        next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        #next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         done = [a[4] for a in result]
         done_ints = np.zeros(np.shape(done))
         reward = [a[2] for a in result]
@@ -130,7 +160,7 @@ class DQNAgent:
         total_ep_means = 0
         for ep in range(episodes):
             state = self.env.reset()
-            state = np.reshape(state, [1, self.obs_space_flat_dim])
+            #state = np.reshape(state, [1, self.obs_space_flat_dim])
             done = False
             total_reward = 0
             steps = 0
@@ -139,7 +169,7 @@ class DQNAgent:
             #for i in range(steps_per_ep):
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
-                next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
+                #next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
                 self.remember(state, action, reward, next_state, done)
                 state = next_state
                 total_reward += reward

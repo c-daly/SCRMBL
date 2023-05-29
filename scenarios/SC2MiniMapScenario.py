@@ -64,10 +64,22 @@ class SC2MiniMapScenario(object):
         )
         #self.model = create_model_with_multidiscrete_output(self.observation_space.shape, 4, 9)
     def unpack_rgb_image(self, plane):
+        try:
+            """Return a correctly shaped numpy array given the image bytes."""
+            #assert plane.bits_per_pixel == 24, "{} != 24".format(plane.bits_per_pixel)
+            #size = (64,64)
+            #data = np.frombuffer(plane.data, dtype=np.uint8)
+            image = Image.frombytes('RGB', (64, 64), plane.data)
+            data = np.array(image)
+        except Exception as e:
+            print(f"unpack error {e}")
+        return data
+
+    def unpack_grayscale_image(self, plane):
         """Return a correctly shaped numpy array given the image bytes."""
-        #assert plane.bits_per_pixel == 24, "{} != 24".format(plane.bits_per_pixel)
-        #size = (64,64)
-        #data = np.frombuffer(plane.data, dtype=np.uint8)
+        # assert plane.bits_per_pixel == 24, "{} != 24".format(plane.bits_per_pixel)
+        # size = (64,64)
+        # data = np.frombuffer(plane.data, dtype=np.uint8)
         image = Image.frombytes('L', (64, 64), plane.data)
         data = np.array(image)
         return data
