@@ -16,7 +16,7 @@ class DQNetwork:
     def __init__(self, obs_space, action_space):
         lr_schedule = schedules.ExponentialDecay(
             initial_learning_rate=.01,
-            decay_steps=750000,
+            decay_steps=7500,
             decay_rate=0.95)
         self.model = Sequential()
         self.model.add(Input(shape=(1,obs_space)))
@@ -72,8 +72,11 @@ class DQNAgent:
             size = (1, self.action_space.shape[0], self.action_space.nvec[0])
         else:
             size = (1, self.action_space_flat_dim)
+            random_choice = np.random.choice(4, size=(1,))
 
         if np.random.rand() <= self.epsilon:
+            if isinstance(self.env.action_space, gym.spaces.Discrete):
+                return random_choice
             return np.random.choice(4, size=(self.action_space_flat_dim,))
         net_result = self.network.model.predict(state, verbose=0)
         #action = np.argmax(net_result.reshape(size, axis=1))

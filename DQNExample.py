@@ -11,14 +11,15 @@ import websocket
 import gym
 from websocket import create_connection
 from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
+from tensorflow import keras
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = MoveToBeaconScenario()
-    env = SC2SyncEnv(websocket, scenario, 8)
+    env = SC2SyncEnv(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000
-    batch_size = 64
-    capacity = 128
+    batch_size = 1024
+    capacity = 4096
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
@@ -26,8 +27,10 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
         actions_n = env.action_space.n
 
     model = DQNAgent(env, env.observation_space, env.action_space, batch_size, capacity)
+    scenario.model = keras.models.load_model("dqn.h5")
+    model.network.model = scenario.model
     #model.network.model = scenario.model
-    scenario.model = model.network
+    #scenario.model = model.network
     start_step = 0
     running_reward = 0
     num_episodes = 100

@@ -147,6 +147,7 @@ class MoveToBeaconScenario(object):
         #        new_obs = [unit.pos.x, unit.pos.y]
         #        derived_obs.append(new_obs)
         self.obs = (([int(marine.pos.x), int(marine.pos.y)], [int(beacon.pos.x), int(beacon.pos.y)]))
+        print(self.obs)
         return self.obs
 
 class DefeatRoachesScenario(object):

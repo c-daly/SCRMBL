@@ -43,6 +43,7 @@ class SC2ProcessManager(object):
                     width=64,
 
                 ),
+                render=sc_pb.SpatialCameraSetup(width=64,),
             )
         )
         request = sc_pb.Request(join_game=join_game)
