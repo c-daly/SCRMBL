@@ -25,6 +25,27 @@ class DQNetwork:
         self.model.add(Dense(action_space, activation='linear'))
         self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
 
+class MultiDiscreteDQNetwork:
+    def __init__(self, input_shape, value_max, num_values):
+        lr_schedule = schedules.ExponentialDecay(
+            initial_learning_rate=.01,
+            decay_steps=50,
+            decay_rate=0.5)
+
+        # Input layer
+        input_layer = Input(shape=input_shape.shape)
+
+        # Hidden layers
+        hidden_layer1 = Dense(64, activation='relu')(input_layer)
+        hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
+
+        # Output layers
+        output_layers = [Dense(value_max, activation='linear')(hidden_layer2) for _ in range(num_values)]
+
+        # Create model
+        model = keras.Model(inputs=input_layer, outputs=output_layers)
+        model.compile(optimizer=Adam(lr=0.0001), loss='mse')
+
 class ConvDQNetwork:
     def __init__(self, obs_space, action_space):
         # Network defined by the Deepmind paper
@@ -83,14 +104,17 @@ class DQNAgent:
         self.batch_size = batch_size
         self.capacity = capacity
 
-        #self.network = self.build_standard_network()
-        self.network = self.build_convolutional_network()
+        self.network = self.build_multidiscrete_network()
+        #self.network = self.build_convolutional_network()
 
     def build_standard_network(self):
         return DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
 
     def build_convolutional_network(self):
         return ConvDQNetwork(self.obs_space, self.action_space_flat_dim)
+
+    def build_multidiscrete_network(self):
+        return MultiDiscreteDQNetwork(self.obs_space, self.action_space.nvec[0], len(self.action_space.nvec))
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
