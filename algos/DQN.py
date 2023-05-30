@@ -33,7 +33,7 @@ class MultiDiscreteDQNetwork:
             decay_rate=0.5)
 
         # Input layer
-        input_layer = Input(shape=input_shape.shape)
+        input_layer = Input(shape=(1,4096))
 
         # Hidden layers
         hidden_layer1 = Dense(64, activation='relu')(input_layer)
@@ -43,8 +43,8 @@ class MultiDiscreteDQNetwork:
         output_layers = [Dense(value_max, activation='linear')(hidden_layer2) for _ in range(num_values)]
 
         # Create model
-        model = keras.Model(inputs=input_layer, outputs=output_layers)
-        model.compile(optimizer=Adam(lr=0.0001), loss='mse')
+        self.model = keras.Model(inputs=input_layer, outputs=output_layers)
+        self.model.compile(optimizer=Adam(lr=0.0001), loss='mse')
 
 class ConvDQNetwork:
     def __init__(self, obs_space, action_space):
@@ -104,8 +104,10 @@ class DQNAgent:
         self.batch_size = batch_size
         self.capacity = capacity
 
-        self.network = self.build_multidiscrete_network()
+        #self.network = self.build_multidiscrete_network()
         #self.network = self.build_convolutional_network()
+
+        self.network = DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
 
     def build_standard_network(self):
         return DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
@@ -114,7 +116,7 @@ class DQNAgent:
         return ConvDQNetwork(self.obs_space, self.action_space_flat_dim)
 
     def build_multidiscrete_network(self):
-        return MultiDiscreteDQNetwork(self.obs_space, self.action_space.nvec[0], len(self.action_space.nvec))
+        return MultiDiscreteDQNetwork(self.obs_space.shape,4, 9)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
@@ -149,9 +151,9 @@ class DQNAgent:
 
         result = self.memory.sample(self.batch_size)
         state = np.array([a[0] for a in result])
-        #state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         next_state = np.array([a[3] for a in result])
-        #next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         done = [a[4] for a in result]
         done_ints = np.zeros(np.shape(done))
         reward = [a[2] for a in result]
@@ -184,7 +186,7 @@ class DQNAgent:
         total_ep_means = 0
         for ep in range(episodes):
             state = self.env.reset()
-            #state = np.reshape(state, [1, self.obs_space_flat_dim])
+            state = np.reshape(state, [1, self.obs_space_flat_dim])
             done = False
             total_reward = 0
             steps = 0
@@ -193,7 +195,7 @@ class DQNAgent:
             #for i in range(steps_per_ep):
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
-                #next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
+                next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
                 self.remember(state, action, reward, next_state, done)
                 state = next_state
                 total_reward += reward

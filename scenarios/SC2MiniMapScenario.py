@@ -58,7 +58,7 @@ class SC2MiniMapScenario(object):
         self.derived_obs = None
         self.observation_space = Box(
             low=0,
-            high=64,
+            high=256,
             shape=(64, 64),
             dtype=int
         )
@@ -113,7 +113,7 @@ class SC2MiniMapScenario(object):
         #        derived_obs.append(new_obs)
         #self.derived_obs = self.print_pixelmap()
         image = raw.observation.render_data.minimap
-        temp = self.unpack_rgb_image(image)
+        temp = self.unpack_grayscale_image(image)
         self.get_marines()
         return temp
         #return self.derived_obs
