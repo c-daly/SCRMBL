@@ -23,28 +23,8 @@ class DQNetwork:
         #self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(64, activation='relu'))
         self.model.add(Dense(action_space, activation='linear'))
-        self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
-
-class MultiDiscreteDQNetwork:
-    def __init__(self, input_shape, value_max, num_values):
-        lr_schedule = schedules.ExponentialDecay(
-            initial_learning_rate=.01,
-            decay_steps=50,
-            decay_rate=0.5)
-
-        # Input layer
-        input_layer = Input(shape=(1,4096))
-
-        # Hidden layers
-        hidden_layer1 = Dense(64, activation='relu')(input_layer)
-        hidden_layer2 = Dense(64, activation='relu')(hidden_layer1)
-
-        # Output layers
-        output_layers = [Dense(value_max, activation='linear')(hidden_layer2) for _ in range(num_values)]
-
-        # Create model
-        self.model = keras.Model(inputs=input_layer, outputs=output_layers)
-        self.model.compile(optimizer=Adam(lr=0.0001), loss='mse')
+        #self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
+        self.model.compile(loss='mse', optimizer=Adam(learning_rate=0.00001))
 
 class ConvDQNetwork:
     def __init__(self, obs_space, action_space):
@@ -56,6 +36,7 @@ class ConvDQNetwork:
 
         self.model = Sequential()
         self.model.add(Input(shape=(1, 64, 64, 3)))
+        #self.model.add(Input(shape=(1,obs_space)))
 
         # Convolutions on the frames on the screen
         self.model.add(Conv2D(32, 8, strides=4, activation="relu"))
@@ -65,7 +46,7 @@ class ConvDQNetwork:
         self.model.add(Flatten())
 
         self.model.add(Dense(512, activation="relu"))
-        self.model.add(Dense(action_space, activation="linear"))
+        self.model.add(Dense(36, activation="linear"))
         self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
 
 # Define Replay Memory
@@ -99,24 +80,14 @@ class DQNAgent:
         self.memory = ReplayMemory(capacity)
         self.gamma = 0.99  # Discount factor
         self.epsilon = 1.0  # Exploration
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.95
+        self.epsilon_min = 0.1
+        self.epsilon_decay = 0.98
         self.batch_size = batch_size
         self.capacity = capacity
 
-        #self.network = self.build_multidiscrete_network()
-        #self.network = self.build_convolutional_network()
-
         self.network = DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
+        #self.network = ConvDQNetwork(self.obs_space_flat_dim, self.action_space)
 
-    def build_standard_network(self):
-        return DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
-
-    def build_convolutional_network(self):
-        return ConvDQNetwork(self.obs_space, self.action_space_flat_dim)
-
-    def build_multidiscrete_network(self):
-        return MultiDiscreteDQNetwork(self.obs_space.shape,4, 9)
 
     def remember(self, state, action, reward, next_state, done):
         self.memory.push(state, action, reward, next_state, done)
@@ -170,7 +141,7 @@ class DQNAgent:
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
-            print(f"New epsilon: {self.epsilon}")
+        print(f"Epsilon: {self.epsilon}")
 
     def load(self, name):
         self.network.model.load_weights(name)
@@ -210,40 +181,7 @@ class DQNAgent:
                     running_episode_mean += episode_mean
                     print(f"Ep: {ep}, final_score: {reward}, ep mean {episode_mean}, running mean: {running_reward_tally/total_steps} ")
                     print(f"total steps: {total_steps}, ep over ep mean: {total_ep_means/(ep + 1)}")
-                    print(f"Learning rate: {self.network.model.optimizer.learning_rate.numpy()}")
+                    #print(f"Learning rate: {self.network.model.optimizer.learning_rate.numpy()}")
                     break
             self.replay()
         return total_steps, running_reward_tally
-
-#with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-#    scenario = SC2MiniMapScenario()
-#    #scenario.model = keras.models.load_model("dqn.h5")
-#
-#    env = SC2SyncEnv(websocket, scenario, 1)
-#    actions_n = 0
-#    n_games = 10000
-#    batch_size = 128
-#    capacity = 150
-#
-#    if isinstance(env.action_space, gym.spaces.MultiDiscrete):
-#        actions_n = env.action_space.nvec[0]
-#    else:
-#        actions_n = env.action_space.n
-#
-#    model = DQNAgent(env, env.observation_space.shape, env.action_space.shape, batch_size, capacity)
-#    #model.network.model = scenario.model
-#    scenario.model = model.network
-#    start_step = 0
-#    running_reward = 0
-#    num_episodes = 100
-#    ep = 0
-#    while True:
-#        try:
-#            start_step, running_reward = model.train(num_episodes, start_step, running_reward)
-#            ep += num_episodes
-#            start_step = model.steps
-#            model.network.model.save("dqn.h5")
-#        except Exception as e:
-#            env.reset()
-#            continue
-#    print(f"Eps: {ep}, Steps: {start_step}")
