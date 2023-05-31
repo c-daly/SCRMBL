@@ -1,3 +1,3 @@
 class BaseScenario(object):
     def __init__(self):
-        pass
+        x = 5

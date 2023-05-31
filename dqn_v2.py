@@ -9,11 +9,11 @@ from envs.SC2SyncEnv import SC2SyncEnv
 from contextlib import closing
 import gym
 from websocket import create_connection
-from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
+from scenarios.DefeatZerglingsAndBanelingsScenario import DefeatZerglingsAndBanelingsScenario
 from algos.DQN import DQNAgent
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
-    scenario = SC2MiniMapScenario()
+    scenario = DefeatZerglingsAndBanelingsScenario()
     env = SC2SyncEnv(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000

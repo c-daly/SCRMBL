@@ -1,5 +1,5 @@
-import BaseScenario
-class DefeatRoachesScenario(BaseScenario):
+from scenarios import BaseScenario
+class DefeatRoachesScenario:
     def __init__(self):
         self.marines = None
         self.map_name = "DefeatRoaches.SC2Map"

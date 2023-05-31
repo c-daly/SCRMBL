@@ -1,53 +1,46 @@
 import numpy as np
 import random
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense, Flatten, Input, Conv2D
-from tensorflow.keras.optimizers import Adam, schedules
-from tensorflow import keras
+from networks.DeepQNetwork import DeepQNetwork
 from collections import deque
-from envs.SC2SyncEnv import SC2SyncEnv
-from contextlib import closing
 import gym
-from websocket import create_connection
-from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
 
 # Define the Q-Network
-class DQNetwork:
-    def __init__(self, obs_space, action_space):
-        lr_schedule = schedules.ExponentialDecay(
-            initial_learning_rate=.01,
-            decay_steps=50,
-            decay_rate=0.5)
-        self.model = Sequential()
-        self.model.add(Input(shape=(1,obs_space)))
-        #self.model.add(Dense(64, activation='relu'))
-        self.model.add(Dense(64, activation='relu'))
-        self.model.add(Dense(action_space, activation='linear'))
-        #self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
-        self.model.compile(loss='mse', optimizer=Adam(learning_rate=0.00001))
+#class DQNetwork:
+#    def __init__(self, obs_space, action_space):
+#        lr_schedule = schedules.ExponentialDecay(
+#            initial_learning_rate=.01,
+#            decay_steps=50,
+#            decay_rate=0.5)
+#        self.model = Sequential()
+#        self.model.add(Input(shape=(1,obs_space)))
+#        #self.model.add(Dense(64, activation='relu'))
+#        self.model.add(Dense(64, activation='relu'))
+#        self.model.add(Dense(action_space, activation='linear'))
+#        #self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
+#        self.model.compile(loss='mse', optimizer=Adam(learning_rate=0.00001))
 
-class ConvDQNetwork:
-    def __init__(self, obs_space, action_space):
-        # Network defined by the Deepmind paper
-        lr_schedule = schedules.ExponentialDecay(
-            initial_learning_rate=.01,
-            decay_steps=50,
-            decay_rate=0.5)
+#class ConvDQNetwork:
+#    def __init__(self, obs_space, action_space):
+#        # Network defined by the Deepmind paper
+#        lr_schedule = schedules.ExponentialDecay(
+#            initial_learning_rate=.01,
+#            decay_steps=50,
+#            decay_rate=0.5)
+#
+#        self.model = Sequential()
+#        self.model.add(Input(shape=(1, 64, 64, 3)))
+#        #self.model.add(Input(shape=(1,obs_space)))
+#
+#        # Convolutions on the frames on the screen
+#        self.model.add(Conv2D(32, 8, strides=4, activation="relu"))
+#        self.model.add(Conv2D(64, 4, strides=2, activation="relu"))
+#        self.model.add(Conv2D(64, 3, strides=1, activation="relu"))
 
-        self.model = Sequential()
-        self.model.add(Input(shape=(1, 64, 64, 3)))
-        #self.model.add(Input(shape=(1,obs_space)))
+#        self.model.add(Flatten())
 
-        # Convolutions on the frames on the screen
-        self.model.add(Conv2D(32, 8, strides=4, activation="relu"))
-        self.model.add(Conv2D(64, 4, strides=2, activation="relu"))
-        self.model.add(Conv2D(64, 3, strides=1, activation="relu"))
-
-        self.model.add(Flatten())
-
-        self.model.add(Dense(512, activation="relu"))
-        self.model.add(Dense(36, activation="linear"))
-        self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
+#        self.model.add(Dense(512, activation="relu"))
+#        self.model.add(Dense(36, activation="linear"))
+#        self.model.compile(loss='mse', optimizer=Adam(learning_rate=lr_schedule))
 
 # Define Replay Memory
 class ReplayMemory:
@@ -59,7 +52,6 @@ class ReplayMemory:
 
     def sample(self, batch_size):
         return random.sample(self.memory, batch_size)
-        #return np.random.choice(self.memory, batch_size)
 
     def __len__(self):
         return len(self.memory)
@@ -85,8 +77,7 @@ class DQNAgent:
         self.batch_size = batch_size
         self.capacity = capacity
 
-        self.network = DQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
-        #self.network = ConvDQNetwork(self.obs_space_flat_dim, self.action_space)
+        self.network = DeepQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
 
 
     def remember(self, state, action, reward, next_state, done):
@@ -132,11 +123,6 @@ class DQNAgent:
         target_next = self.network.model.predict(next_state, verbose=0)
 
         target += self.gamma * target_next * done_ints.reshape(self.batch_size, 1, 1)
-        #target = reward
-        #if not done:
-        #target += self.gamma * target_f
-        #    target_f = target
-        #self.network.model.fit(state, target_next, epochs=1, verbose=0)
         self.network.model.fit(state, target, epochs=1, verbose=0)
 
         if self.epsilon > self.epsilon_min:
@@ -163,7 +149,6 @@ class DQNAgent:
             steps = 0
             ep_steps = 0
             while True:
-            #for i in range(steps_per_ep):
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
                 next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
@@ -181,7 +166,6 @@ class DQNAgent:
                     running_episode_mean += episode_mean
                     print(f"Ep: {ep}, final_score: {reward}, ep mean {episode_mean}, running mean: {running_reward_tally/total_steps} ")
                     print(f"total steps: {total_steps}, ep over ep mean: {total_ep_means/(ep + 1)}")
-                    #print(f"Learning rate: {self.network.model.optimizer.learning_rate.numpy()}")
                     break
             self.replay()
         return total_steps, running_reward_tally

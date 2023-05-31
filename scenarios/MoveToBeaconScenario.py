@@ -1,5 +1,5 @@
-import BaseScenario
-class MoveToBeaconScenario(BaseScenario):
+from scenarios import BaseScenario
+class MoveToBeaconScenario:
     def __init__(self):
         self.marines = None
         self.map_name = "MoveToBeacon.SC2Map"

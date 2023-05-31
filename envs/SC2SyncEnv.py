@@ -3,7 +3,7 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from managers.SC2ProcessManager import SC2ProcessManager
 import numpy as np
-from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
+from scenarios import DefeatZerglingsAndBanelingsScenario
 from envs.SC2.SC2Actions import Actions
 
 class SC2SyncEnv(BaseEnv):
@@ -13,7 +13,7 @@ class SC2SyncEnv(BaseEnv):
         self.step_multiplier = step_multiplier
         self.default_move_speed = 2
         if scenario is None:
-            self.scenario = MoveToBeaconScenario()
+            self.scenario = DefeatZerglingsAndBanelingsScenario()
         self.last_kill_value = 0
         self.sc2_manager = SC2ProcessManager(websocket, self.scenario, step_multiplier=step_multiplier)
         self.derived_obs = []

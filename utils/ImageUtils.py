@@ -1,7 +1,7 @@
 import numpy as np
 from PIL import Image
 class ImageUtils:
-    def unpack_rgb_image(self, plane):
+    def unpack_rgb_image(plane):
         try:
             """Return a correctly shaped numpy array given the image bytes."""
             image = Image.frombytes('RGB', (64, 64), plane.data)
@@ -10,7 +10,7 @@ class ImageUtils:
             print(f"unpack error {e}")
         return data
 
-    def unpack_grayscale_image(self, plane):
+    def unpack_grayscale_image(plane):
         """Return a correctly shaped numpy array given the image bytes."""
         image = Image.frombytes('L', (64, 64), plane.data)
         data = np.array(image)
