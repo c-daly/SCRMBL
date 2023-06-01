@@ -1,9 +1,12 @@
 import numpy as np
 import random
 from networks.DeepQNetwork import DeepQNetwork
+from networks.CNN import CNN
 from collections import deque
 import gym
+import tensorflow as tf
 
+from tensorflow.keras.utils import to_categorical
 # Define the Q-Network
 #class DQNetwork:
 #    def __init__(self, obs_space, action_space):
@@ -77,7 +80,8 @@ class DQNAgent:
         self.batch_size = batch_size
         self.capacity = capacity
 
-        self.network = DeepQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
+        #self.network = DeepQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
+        self.network = CNN()
 
 
     def remember(self, state, action, reward, next_state, done):
@@ -96,7 +100,9 @@ class DQNAgent:
             if isinstance(self.env.action_space, gym.spaces.Discrete):
                 return random_choice
             return np.random.choice(self.action_space.nvec[0], size=(len(self.action_space.nvec)))
-        net_result = self.network.model.predict(state, verbose=0)
+        reshaped_state = np.expand_dims(state, axis=0)
+        net_result = self.network.model.predict(reshaped_state, verbose=0)
+        #net_result = self.network.model.predict(state, verbose=0)
         #action = np.argmax(net_result.reshape(size, axis=1))
         action = net_result.reshape(size)
         #action = np.amax(action[0], axis=1)
@@ -113,17 +119,22 @@ class DQNAgent:
 
         result = self.memory.sample(self.batch_size)
         state = np.array([a[0] for a in result])
-        state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        state = state.reshape(self.batch_size, 64, 64, 3)
+        #state = state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
         next_state = np.array([a[3] for a in result])
-        next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        #next_state = next_state.reshape(self.batch_size, 1, self.obs_space_flat_dim)
+        next_state = next_state.reshape(self.batch_size, 64, 64, 3)
         done = [a[4] for a in result]
         done_ints = np.zeros(np.shape(done))
         reward = [a[2] for a in result]
         target = self.network.model.predict(state, verbose=0)
+        test_target = to_categorical(target)
         target_next = self.network.model.predict(next_state, verbose=0)
-
-        target += self.gamma * target_next * done_ints.reshape(self.batch_size, 1, 1)
-        self.network.model.fit(state, target, epochs=1, verbose=0)
+        reshaped_target = np.argmax(target, axis=1)
+        #reshaped_target_next = np.argmax(target_next, axis=1)
+        #target += self.gamma * target_next * done_ints.reshape(self.batch_size, 1, 1)
+        target += self.gamma * done_ints[0] * target_next
+        self.network.model.fit(state, reshaped_target, epochs=1, verbose=0)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
@@ -143,7 +154,7 @@ class DQNAgent:
         total_ep_means = 0
         for ep in range(episodes):
             state = self.env.reset()
-            state = np.reshape(state, [1, self.obs_space_flat_dim])
+            #state = np.reshape(state, [1, self.obs_space_flat_dim])
             done = False
             total_reward = 0
             steps = 0
@@ -151,7 +162,7 @@ class DQNAgent:
             while True:
                 action = self.act(state)
                 next_state, reward, done, _ = self.env.step(action)
-                next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
+                #next_state = np.reshape(next_state, [1, self.obs_space_flat_dim])
                 self.remember(state, action, reward, next_state, done)
                 state = next_state
                 total_reward += reward

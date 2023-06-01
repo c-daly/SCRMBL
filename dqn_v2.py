@@ -17,7 +17,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     env = SC2SyncEnv(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000
-    batch_size = 4096
+    batch_size = 8192
     capacity = 100000
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
@@ -27,9 +27,8 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
 
     model = DQNAgent(env, env.observation_space, env.action_space, batch_size, capacity)
     scenario.model = keras.models.load_model("dzb.dqn.h5")
-    model.network.model = scenario.model
     #model.network.model = scenario.model
-    scenario.model = model.network
+    #model.network.model = scenario.model
     start_step = 0
     running_reward = 0
     num_episodes = 100

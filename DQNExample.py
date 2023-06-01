@@ -10,16 +10,17 @@ from time import sleep
 import websocket
 import gym
 from websocket import create_connection
-from scenarios.SC2MiniMapScenario import SC2MiniMapScenario, MoveToBeaconScenario, DefeatRoachesScenario
+from scenarios.MoveToBeaconScenario import MoveToBeaconScenario
 from tensorflow import keras
+from networks.DeepQNetwork import DeepQNetwork
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = MoveToBeaconScenario()
     env = SC2SyncEnv(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000
-    batch_size = 1024
-    capacity = 1024
+    batch_size = 2
+    capacity = 4
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):
         actions_n = env.action_space.nvec[0]
@@ -28,9 +29,6 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
 
     model = DQNAgent(env, env.observation_space, env.action_space, batch_size, capacity)
     #scenario.model = keras.models.load_model("mtb.dqn.h5")
-    model.network.model = scenario.model
-    #model.network.model = scenario.model
-    scenario.model = model.network
     start_step = 0
     running_reward = 0
     num_episodes = 100
@@ -41,6 +39,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
             ep += num_episodes
             model.network.model.save("mtb.dqn.h5")
         except Exception as e:
+            raise e
             env.reset()
             continue
     print(f"Eps: {ep}, Steps: {start_step}")
