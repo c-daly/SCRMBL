@@ -28,7 +28,7 @@ class DefeatZerglingsAndBanelingsScenario:
     def get_derived_obs_from_raw(self, raw):
         self.raw_obs = raw
         image = raw.observation.render_data.minimap
-        temp = ImageUtils.unpack_grayscale_image(image)
+        temp = ImageUtils.unpack_rgb_image(image)
         self.get_marines()
         return temp
 

@@ -81,7 +81,7 @@ class DQNAgent:
         self.capacity = capacity
 
         #self.network = DeepQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
-        self.network = CNN()
+        self.network = CNN(self.obs_space, self.action_space_flat_dim)
 
 
     def remember(self, state, action, reward, next_state, done):
