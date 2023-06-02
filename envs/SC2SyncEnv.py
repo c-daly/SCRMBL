@@ -3,7 +3,7 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from managers.SC2ProcessManager import SC2ProcessManager
 import numpy as np
-from scenarios import DefeatZerglingsAndBanelingsScenario
+from scenarios.DefeatZerglingsAndBanelingsScenario import DefeatZerglingsAndBanelingsScenario
 from envs.SC2.SC2Actions import Actions
 
 class SC2SyncEnv(BaseEnv):
@@ -11,7 +11,7 @@ class SC2SyncEnv(BaseEnv):
         super().__init__()
         self.scenario = scenario
         self.step_multiplier = step_multiplier
-        self.default_move_speed = 2
+        self.default_move_speed = 4
         if scenario is None:
             self.scenario = DefeatZerglingsAndBanelingsScenario()
         self.last_kill_value = 0
@@ -89,6 +89,7 @@ class SC2SyncEnv(BaseEnv):
 
     def take_action(self, action):
         try:
+            cmd_func = Actions.random_attack
             actions_pb = []
             self.get_obs()
             self.get_marines()
@@ -106,14 +107,16 @@ class SC2SyncEnv(BaseEnv):
                         cmd_func = Actions.move_down
                     elif cmd == 3:
                         cmd_func = Actions.move_up
-                    else:
-                        raise Exception("Invalid action")
+
                     #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
-                    actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(self.marines[i], action[i], self.default_move_speed)))
+
+                    # i == 4 is a noop
+                    if i < 4:
+                        actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(self.marines[i], action[i], self.default_move_speed)))
 
                 else:
                     actions_pb.append(raw_pb.ActionRaw(unit_command=Actions.random_attack(self.marines[i], 64, 64)))
-                    break
+                    #break
 
             request_action = sc_pb.RequestAction(actions=[sc_pb.Action(action_raw=a) for a in actions_pb])
             request = sc_pb.Request(action=request_action)

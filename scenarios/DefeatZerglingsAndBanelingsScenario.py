@@ -10,7 +10,8 @@ class DefeatZerglingsAndBanelingsScenario:
         self.raw_obs = None
         self.marines = None
         self.map_name = "DefeatZerglingsAndBanelings.SC2Map"
-        self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
+        #self.action_space = MultiDiscrete([4, 4, 4, 4, 4, 4, 4, 4, 4])
+        self.action_space = MultiDiscrete([5, 5, 5, 5, 5, 5, 5, 5, 5])
         self.map_high = 64
         self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         self.derived_obs = None

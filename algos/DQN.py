@@ -76,7 +76,7 @@ class DQNAgent:
         self.gamma = 0.99  # Discount factor
         self.epsilon = 1.0  # Exploration
         self.epsilon_min = 0.1
-        self.epsilon_decay = 0.98
+        self.epsilon_decay = 0.995
         self.batch_size = batch_size
         self.capacity = capacity
 
@@ -134,7 +134,7 @@ class DQNAgent:
         #reshaped_target_next = np.argmax(target_next, axis=1)
         #target += self.gamma * target_next * done_ints.reshape(self.batch_size, 1, 1)
         target += self.gamma * done_ints[0] * target_next
-        self.network.model.fit(state, reshaped_target, epochs=1, verbose=0)
+        self.network.model.fit(state, reshaped_target, epochs=1, verbose=1)
 
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
