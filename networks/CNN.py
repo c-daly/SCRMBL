@@ -29,7 +29,7 @@ class CNN:
         model.add(Dense(action_space_flat, activation='softmax'))  # Output layer with 4 classes (0 to 3)
 
         # Compile the model
-        model.compile(optimizer=Adam(learning_rate=0.000001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=Adam(learning_rate=0.00000000001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
         self.model = model
         # Print the model summary
         model.summary()

@@ -17,7 +17,7 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     env = SC2SyncEnv(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000
-    batch_size = 256 #65536
+    batch_size = 1024 #65536
     capacity = 4096 #1048576
 
     if isinstance(env.action_space, gym.spaces.MultiDiscrete):

@@ -11,7 +11,7 @@ class SC2SyncEnv(BaseEnv):
         super().__init__()
         self.scenario = scenario
         self.step_multiplier = step_multiplier
-        self.default_move_speed = 4
+        self.default_move_speed = 2
         if scenario is None:
             self.scenario = DefeatZerglingsAndBanelingsScenario()
         self.last_kill_value = 0
