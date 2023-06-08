@@ -1,6 +1,7 @@
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
-from tensorflow.keras.optimizers import Adam, schedules
+from tensorflow.keras.optimizers import Adam, schedules, SGD
+from tensorflow.keras.metrics import Accuracy, AUC, MeanSquaredError
 
 class CNN:
     def __init__(self, obs_space, action_space_flat):
@@ -25,11 +26,10 @@ class CNN:
         # Dense layers
         model.add(Dense(256, activation='relu'))
         model.add(Dense(128, activation='relu'))
-        #model.add(Dense(4, activation='softmax'))  # Output layer with 4 classes (0 to 3)
         model.add(Dense(action_space_flat, activation='softmax'))  # Output layer with 4 classes (0 to 3)
 
         # Compile the model
-        model.compile(optimizer=Adam(learning_rate=0.00000000001), loss='sparse_categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer=Adam(), loss='mean_squared_error', metrics=['accuracy'])
         self.model = model
         # Print the model summary
         model.summary()

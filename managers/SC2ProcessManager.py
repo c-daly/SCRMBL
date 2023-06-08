@@ -2,7 +2,7 @@ from s2clientprotocol import sc2api_pb2 as sc_pb
 from s2clientprotocol import raw_pb2 as raw_pb
 from s2clientprotocol import common_pb2 as common_pb
 class SC2ProcessManager(object):
-    def __init__(self, websocket, scenario, step_multiplier=1):
+    def __init__(self, websocket, scenario, step_multiplier=16):
         self.websocket = websocket
         self.scenario = scenario
         self.step_multiplier = step_multiplier

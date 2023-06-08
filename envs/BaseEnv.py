@@ -7,8 +7,9 @@ class BaseEnv(gym.Env, ABC):
 
     def __init__(self):
         self.envType = "Gym"
+        self.num_envs = 1
 
-    def reset(selfself):
+    def reset(self):
         pass
 
     def step(self, action):

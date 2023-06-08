@@ -7,7 +7,7 @@ from scenarios.DefeatZerglingsAndBanelingsScenario import DefeatZerglingsAndBane
 from envs.SC2.SC2Actions import Actions
 
 class SC2SyncEnv(BaseEnv):
-    def __init__(self, websocket, scenario=None, step_multiplier=16, **kwargs):
+    def __init__(self, websocket, scenario=None, step_multiplier=32, **kwargs):
         super().__init__()
         self.scenario = scenario
         self.step_multiplier = step_multiplier

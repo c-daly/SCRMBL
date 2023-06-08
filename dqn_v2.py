@@ -6,32 +6,33 @@ from tensorflow.keras.optimizers import Adam, schedules
 from tensorflow import keras
 from collections import deque
 from envs.SC2SyncEnv import SC2SyncEnv
+from envs.SC2SyncEnvExtended import SC2SyncEnvExtended
 from contextlib import closing
 import gym
 from websocket import create_connection
 from scenarios.DefeatZerglingsAndBanelingsScenario import DefeatZerglingsAndBanelingsScenario
+from scenarios.DefeatRoachesScenario import DefeatRoachesScenario
+from scenarios.MoveToBeaconScenario import MoveToBeaconScenario
 from algos.DQN import DQNAgent
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = DefeatZerglingsAndBanelingsScenario()
-    env = SC2SyncEnv(websocket, scenario, 16)
+    env = SC2SyncEnvExtended(websocket, scenario, 8)
     actions_n = 0
     n_games = 10000
-    batch_size = 1024 #65536
-    capacity = 4096 #1048576
+    batch_size = 2048 # 1024
+    capacity = 4096
 
-    if isinstance(env.action_space, gym.spaces.MultiDiscrete):
-        actions_n = env.action_space.nvec[0]
-    else:
-        actions_n = env.action_space.n
+    #if isinstance(env.action_space, gym.spaces.MultiDiscrete):
+    #    actions_n = env.action_space.nvec[0]
+    #else:
+    #    actions_n = env.action_space.n
 
     model = DQNAgent(env, env.observation_space, env.action_space, batch_size, capacity)
-    #scenario.model = keras.models.load_model("dzb.dqn.h5")
-    #model.network.model = scenario.model
-    #model.network.model = scenario.model
+    #model.network.model = keras.models.load_model("dzb.dqn.h5")
     start_step = 0
     running_reward = 0
-    num_episodes = 100
+    num_episodes = 10
     ep = 0
     while True:
         try:

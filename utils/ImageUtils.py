@@ -10,6 +10,10 @@ class ImageUtils:
             print(f"unpack error {e}")
         return data
 
+    # Given an s2clientprotocol.common_pb2.ImageData object, return a numpy array
+    # The data is assumed to be an rgb image.
+
+
     def unpack_grayscale_image(plane):
         """Return a correctly shaped numpy array given the image bytes."""
         image = Image.frombytes('L', (64, 64), plane.data)

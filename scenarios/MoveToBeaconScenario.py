@@ -8,7 +8,7 @@ class MoveToBeaconScenario:
     def __init__(self):
         self.marines = None
         self.map_name = "MoveToBeacon.SC2Map"
-        self.action_space = Discrete(4)
+        self.action_space = Discrete(3)
         self.map_high = 64
         self.map = np.zeros((self.map_high, self.map_high), dtype=int)
         self.derived_obs = None
@@ -31,6 +31,7 @@ class MoveToBeaconScenario:
     def get_derived_obs_from_raw(self, raw):
         self.raw_obs = raw
         marine = self.get_marines()[0]
+        self.get_beacon()
         image = raw.observation.render_data.minimap
         temp = ImageUtils.unpack_rgb_image(image)
         self.obs = temp

@@ -32,6 +32,21 @@ class Actions(object):
         except Exception as e:
             print(f"attack action error {e}")
 
+    def attack_enemy(unit, enemy):
+        try:
+            unit_tag = unit.tag
+            enemy_tag = enemy.tag
+            x = enemy.pos.x
+            y = enemy.pos.y
+            return raw_pb.ActionRawUnitCommand(
+                ability_id=23,  # Move
+                unit_tags=[unit_tag],
+                target_world_space_pos=common_pb.Point2D(x=x, y=y)
+            )
+        except Exception as e:
+            print(f"attack action error {e}")
+
+
 
     def move_left(unit, pos, default_move_speed=4):
         try:
