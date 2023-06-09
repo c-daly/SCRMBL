@@ -1,13 +1,17 @@
 import numpy as np
 import random
 from networks.DeepQNetwork import DeepQNetwork
-from networks.CNN import CNN
+from networks.CNN import CNN, CNN2
 from collections import deque
 import gym
 import tensorflow as tf
 from keras.utils import np_utils
 
 from tensorflow.keras.utils import to_categorical
+from keras.callbacks import LearningRateScheduler
+
+
+
 # Define the Q-Network
 #class DQNetwork:
 #    def __init__(self, obs_space, action_space):
@@ -63,6 +67,7 @@ class ReplayMemory:
 # Define DQN Agent
 class DQNAgent:
     def __init__(self, env, obs_space, action_space, batch_size, capacity):
+        self.episodes = 0
         self.env = env
         self.obs_space = obs_space
         self.obs_space_flat_dim = np.prod(obs_space.shape)
@@ -77,12 +82,13 @@ class DQNAgent:
         self.gamma = 0.99  # Discount factor
         self.epsilon = 1.0  # Exploration
         self.epsilon_min = 0.1
-        self.epsilon_decay = 0.9995
+        self.epsilon_decay = 0.995
         self.batch_size = batch_size
         self.capacity = capacity
 
         #self.network = DeepQNetwork(self.obs_space_flat_dim, self.action_space_flat_dim)
-        self.network = CNN(self.obs_space, self.action_space_flat_dim)
+        #self.network = CNN(self.obs_space, self.action_space_flat_dim)
+        self.network = CNN2(self.obs_space, self.action_space_flat_dim)
 
 
     def remember(self, state, action, reward, next_state, done):
@@ -114,6 +120,11 @@ class DQNAgent:
             action = np.argmax(action)
         return action
 
+    def lr_schedule(self):
+        # Learning rate schedule
+        lr = 0.1 * (0.9 ** self.episodes)
+        return lr
+
     def replay(self):
         if len(self.memory) < self.batch_size:
             return
@@ -140,11 +151,15 @@ class DQNAgent:
             target += np.dot(self.gamma, done).dot(target_next)
             #target = np.reshape(15, 15)
             reshaped_target = np.max(target, axis=1)
-            self.network.model.fit(state, reshaped_target, epochs=1, verbose=1)
+
+            self.network.model.optimizer.learning_rate.assign(self.lr_schedule())
+
+            self.network.model.fit(state, reshaped_target, epochs=1, verbose=1, batch_size=self.batch_size)
 
             if self.epsilon > self.epsilon_min:
                 self.epsilon *= self.epsilon_decay
             print(f"Epsilon: {self.epsilon}")
+            print(f"Learning rate: {self.network.model.optimizer.learning_rate.value()}")
         except Exception as e:
             print(f"Replay failed: {e}")
 
@@ -178,6 +193,7 @@ class DQNAgent:
                 steps += 1
                 ep_steps += 1
                 if done:
+                    self.episodes += 1
                     total_steps += steps
                     steps = 0
                     running_reward_tally += total_reward

@@ -102,13 +102,13 @@ class SC2SyncEnvExtended(BaseEnv):
                 action = [action]
             for i, marine in enumerate(self.marines):
                 cmd = action[i]
-                if cmd == 0:
+                if cmd == 1:
                     cmd_func = Actions.move_left
-                elif cmd == 1:
-                    cmd_func = Actions.move_right
                 elif cmd == 2:
-                    cmd_func = Actions.move_down
+                    cmd_func = Actions.move_right
                 elif cmd == 3:
+                    cmd_func = Actions.move_down
+                elif cmd == 4:
                     cmd_func = Actions.move_up
                 elif cmd > 4:
                     cmd_func = Actions.attack_enemy
@@ -116,7 +116,7 @@ class SC2SyncEnvExtended(BaseEnv):
                 #actions_pb.append(raw_pb.ActionRaw(unit_command=self.random_attack(i, action[i])))
 
                 # cmd == 4 is a noop
-                if cmd < 4:
+                if 0 < cmd < 5:
                     if len(self.marines) > i:
                         actions_pb.append(raw_pb.ActionRaw(unit_command=cmd_func(self.marines[i], action[i], self.default_move_speed)))
                 else:

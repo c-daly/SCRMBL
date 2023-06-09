@@ -17,11 +17,11 @@ from algos.DQN import DQNAgent
 
 with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     scenario = DefeatZerglingsAndBanelingsScenario()
-    env = SC2SyncEnvExtended(websocket, scenario, 8)
+    env = SC2SyncEnvExtended(websocket, scenario, 16)
     actions_n = 0
     n_games = 10000
-    batch_size = 2048 # 1024
-    capacity = 4096
+    batch_size = 1024 # 16384
+    capacity = 4096 #65536
 
     #if isinstance(env.action_space, gym.spaces.MultiDiscrete):
     #    actions_n = env.action_space.nvec[0]
