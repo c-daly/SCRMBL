@@ -3,6 +3,7 @@ from gym.spaces import MultiDiscrete, Box, Discrete
 from PIL import Image
 from utils.ImageUtils import ImageUtils
 from scenarios import BaseScenario
+from spaces import SpaceContainer
 
 
 class DefeatZerglingsAndBanelingsScenario:
@@ -21,6 +22,7 @@ class DefeatZerglingsAndBanelingsScenario:
             shape=(64, 64, 3),
             dtype=np.uint8
         )
+        self.space_container = SpaceContainer(self.observation_space, self.action_space)
 
     def get_marines(self):
         self.marines = [unit for unit in self.raw_obs.observation.raw_data.units if unit.alliance == 1]

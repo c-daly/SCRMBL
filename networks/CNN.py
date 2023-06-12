@@ -46,14 +46,16 @@ class CNN2:
         model.add(Input(shape=(64, 64, 3)))
         # Hidden layer 1
         model.add(Conv2D(16, (8, 8), strides=(4, 4), activation='relu'))
-        model.add(Dropout(0.2))
+        #model.add(Dropout(0.2))
         # Hidden layer 2
         model.add(Conv2D(32, (4, 4), strides=(2, 2), activation='relu'))
-        model.add(Dropout(0.2))
+        #model.add(Dropout(0.2))
         # Flattening the tensor output from the previous layer to fit into a dense layer
         model.add(Flatten())
         # Hidden layer 3
         model.add(Dense(256, activation='relu'))
+        model.add(Dense(128, activation='relu'))
+        model.add(Dense(64, activation='relu'))
         # Output layer
         model.add(Dense(action_space_flat, activation='softmax'))
 

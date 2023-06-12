@@ -19,15 +19,15 @@ with closing(create_connection("ws://127.0.0.1:5000/sc2api")) as websocket:
     checkpoint_callback = CheckpointCallback(save_freq=1000, save_path="./logs/raw_agent_runner/ppo",
                                              name_prefix="rl_model")
     scenario = DefeatZerglingsAndBanelingsScenario()
-    env = SC2SyncEnvExtended(websocket, scenario, 64)
+    env = SC2SyncEnvExtended(websocket, scenario, 1)
     #env = DummyVecEnv([lambda: Monitor(env)])
     #eval_callback = EvalCallback(env, best_model_save_path="./logs/raw_agent_runner/ppo/",
     #                                 log_path="./logs/raw_agent_runner/ppo/", eval_freq=1000,
         #                             deterministic=True, render=False, n_eval_episodes=3)
 
-    model = PPO(policies.ActorCriticPolicy, env=env, learning_rate=0.001, gamma=0.99, verbose=1)
+    model = PPO(policy='MlpPolicy', env=env, learning_rate=0.001, gamma=0.99, verbose=1)
     #model = PPO.load("logs/raw_agent_runner/ppo/rl_model_63000_steps.zip")
-    model.env = env
+    #model.env = env
     while True:
         try:
             model.learn(total_timesteps=100000, callback=[checkpoint_callback])
